@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/BrenekH/blinky/apiunstable"
 )
 
 type handleFunc func(pattern string, handler http.Handler)
@@ -21,7 +23,8 @@ func main() {
 
 	registerRepoPaths(http.Handle, "/repo", strings.Split(repoPaths, ":"))
 
-	http.HandleFunc("/api/", api)
+	http.HandleFunc("/api", api)
+	apiunstable.Register()
 
 	http.ListenAndServe(":9000", nil)
 }
