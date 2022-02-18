@@ -23,14 +23,9 @@ func main() {
 
 	registerRepoPaths(http.Handle, "/repo", strings.Split(repoPaths, ":"))
 
-	http.HandleFunc("/api", api)
 	apiunstable.Register()
 
 	http.ListenAndServe(":9000", nil)
-}
-
-func api(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello"))
 }
 
 func registerRepoPaths(h handleFunc, base string, repoPaths []string) {
