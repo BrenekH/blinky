@@ -4,22 +4,23 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
+type handleFunc func(pattern string, handler http.Handler)
+
 func main() {
-	repoPath, ok := os.LookupEnv("BLINKY_REPO_PATH")
+	repoPaths, ok := os.LookupEnv("BLINKY_REPO_PATH")
 	if !ok {
 		cwd, err := os.Getwd()
 		if err != nil {
 			panic(err)
 		}
-		repoPath = cwd + "/repo"
+		repoPaths = cwd + "/repo"
 	}
 
-	repoName := filepath.Base(repoPath)
-	repoNameSlashed := "/" + repoName + "/"
+	registerRepoPaths(http.Handle, "/repo", strings.Split(repoPaths, ":"))
 
-	http.Handle(repoNameSlashed, http.StripPrefix(repoNameSlashed, http.FileServer(http.Dir(repoPath))))
 	http.HandleFunc("/api/", api)
 
 	http.ListenAndServe(":9000", nil)
@@ -27,4 +28,12 @@ func main() {
 
 func api(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello"))
+}
+
+func registerRepoPaths(h handleFunc, base string, repoPaths []string) {
+	for _, path := range repoPaths {
+		repoName := filepath.Base(path)
+		repoNameSlashed := "/" + repoName + "/"
+		h(base+repoNameSlashed, http.StripPrefix(base+repoNameSlashed, http.FileServer(http.Dir(path))))
+	}
 }
