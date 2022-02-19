@@ -12,18 +12,28 @@ func Register() {
 	r := mux.NewRouter()
 	s := r.PathPrefix("/api/unstable/").Subrouter()
 
-	s.HandleFunc("/{repo}/package/{package_name}", handleRepoPkg)
+	s.HandleFunc("/{repo}/package/{package_name}", putRepoPkg).Methods(http.MethodPut)
+	s.HandleFunc("/{repo}/package/{package_name}", deleteRepoPkg).Methods(http.MethodDelete)
 
-	http.Handle("/", r)
+	http.Handle("/", r) // I dislike handling the root path here just so we can use Gorilla Mux for URL path variables.
 }
 
-// Routes (all prefixed with /api/unstable):
-// PUT /:repo/package/:package_name
-// DELETE /:repo/package/:package_name
-
-func handleRepoPkg(w http.ResponseWriter, r *http.Request) {
+func putRepoPkg(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	fmt.Println("repo: ", vars["repo"])
 	fmt.Println("package: ", vars["package_name"])
-	w.Write([]byte("Hello"))
+
+	// TODO: Implement
+
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+func deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	fmt.Println("repo: ", vars["repo"])
+	fmt.Println("package: ", vars["package_name"])
+
+	// TODO: Implement
+
+	w.WriteHeader(http.StatusNotImplemented)
 }
