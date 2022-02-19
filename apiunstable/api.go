@@ -1,37 +1,42 @@
 package apiunstable
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
-// Register registers http handlers associated with the unstable API.
-func Register() {
-	r := mux.NewRouter()
-	s := r.PathPrefix("/api/unstable/").Subrouter()
-
-	s.HandleFunc("/{repo}/package/{package_name}", putRepoPkg).Methods(http.MethodPut)
-	s.HandleFunc("/{repo}/package/{package_name}", deleteRepoPkg).Methods(http.MethodDelete)
-
-	http.Handle("/", r) // I dislike handling the root path here just so we can use Gorilla Mux for URL path variables.
+func New() API {
+	// TODO: Require a database struct to be passed for use by the API.
+	return API{}
 }
 
-func putRepoPkg(w http.ResponseWriter, r *http.Request) {
+type API struct{}
+
+// Register registers http handlers associated with the unstable API.
+func (a *API) Register(router *mux.Router) {
+	router.HandleFunc("/{repo}/package/{package_name}", a.putRepoPkg).Methods(http.MethodPut)
+	router.HandleFunc("/{repo}/package/{package_name}", a.deleteRepoPkg).Methods(http.MethodDelete)
+}
+
+func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
+	// Extract variables from URL
 	vars := mux.Vars(r)
-	fmt.Println("repo: ", vars["repo"])
-	fmt.Println("package: ", vars["package_name"])
+	targetRepo := vars["repo"]
+	targetPkgName := vars["package_name"]
+	_, _ = targetRepo, targetPkgName
 
 	// TODO: Implement
 
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-func deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
+func (a *API) deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
+	// Extract variables from URL
 	vars := mux.Vars(r)
-	fmt.Println("repo: ", vars["repo"])
-	fmt.Println("package: ", vars["package_name"])
+	targetRepo := vars["repo"]
+	targetPkgName := vars["package_name"]
+	_, _ = targetRepo, targetPkgName
 
 	// TODO: Implement
 

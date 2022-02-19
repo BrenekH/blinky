@@ -7,9 +7,8 @@ import (
 	"strings"
 
 	"github.com/BrenekH/blinky/apiunstable"
+	"github.com/gorilla/mux"
 )
-
-type handleFunc func(pattern string, handler http.Handler)
 
 func main() {
 	repoPaths, ok := os.LookupEnv("BLINKY_REPO_PATH")
@@ -21,17 +20,23 @@ func main() {
 		repoPaths = cwd + "/repo"
 	}
 
-	registerRepoPaths(http.Handle, "/repo", strings.Split(repoPaths, ":"))
+	rootRouter := mux.NewRouter()
 
-	apiunstable.Register()
+	// The PathPrefix value and base string must be the same so that the file server can properly serve the files.
+	registerRepoPaths(rootRouter.PathPrefix("/repo").Subrouter(), "/repo", strings.Split(repoPaths, ":"))
+
+	apiUnstable := apiunstable.New()
+	apiUnstable.Register(rootRouter.PathPrefix("/api/unstable/").Subrouter())
+
+	http.Handle("/", rootRouter)
 
 	http.ListenAndServe(":9000", nil)
 }
 
-func registerRepoPaths(h handleFunc, base string, repoPaths []string) {
+func registerRepoPaths(router *mux.Router, base string, repoPaths []string) {
 	for _, path := range repoPaths {
 		repoName := filepath.Base(path)
 		repoNameSlashed := "/" + repoName + "/"
-		h(base+repoNameSlashed, http.StripPrefix(base+repoNameSlashed, http.FileServer(http.Dir(path))))
+		router.Handle(repoNameSlashed, http.StripPrefix(base+repoNameSlashed, http.FileServer(http.Dir(path))))
 	}
 }
