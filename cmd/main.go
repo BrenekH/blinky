@@ -31,7 +31,7 @@ func main() {
 		panic(err)
 	}
 
-	apiUnstable := apiunstable.New(&ds, extractRepoNames(repoPaths))
+	apiUnstable := apiunstable.New(&ds, correlateRepoNames(repoPaths))
 	apiUnstable.Register(rootRouter.PathPrefix("/api/unstable/").Subrouter())
 
 	http.Handle("/", rootRouter)
@@ -47,14 +47,14 @@ func registerRepoPaths(router *mux.Router, base string, repoPaths []string) {
 	}
 }
 
-func extractRepoNames(repoPaths string) []string {
-	s := []string{}
+func correlateRepoNames(repoPaths string) map[string]string {
+	m := make(map[string]string)
 
 	split := strings.Split(repoPaths, ":")
 
 	for _, path := range split {
-		s = append(s, filepath.Base(path))
+		m[filepath.Base(path)] = path
 	}
 
-	return s
+	return m
 }

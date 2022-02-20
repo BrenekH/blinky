@@ -2,21 +2,24 @@ package apiunstable
 
 import (
 	"fmt"
+	"io"
 	"log"
+	"mime/multipart"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/BrenekH/blinky"
 	"github.com/gorilla/mux"
 )
 
-func New(storageProvider blinky.PackageNameToFileProvider, foundRepos []string) API {
+func New(storageProvider blinky.PackageNameToFileProvider, foundRepos map[string]string) API {
 	return API{storage: storageProvider, repos: foundRepos}
 }
 
 type API struct {
 	storage blinky.PackageNameToFileProvider
-	repos   []string
+	repos   map[string]string // Map of repo name to repo path
 }
 
 // Register registers http handlers associated with the unstable API.
@@ -38,6 +41,9 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Populate r.FormFile by parsing the request body and loading up to 256 MB of the files into memory. The rest of the files are stored on disk.
+	r.ParseMultipartForm(256_000_000)
+
 	formPkgFile, formPkgHeader, err := r.FormFile("package")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -45,22 +51,21 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// formSigFile, formSigHeader, err := r.FormFile("signature")
-	// if err != nil {
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	log.Println(err)
-	// 	return
-	// }
+	saveMultipartFile(formPkgFile, formPkgHeader, a.repos[targetRepo])
 
-	pkgFilename := filepath.Base(formPkgHeader.Filename)
-	// sigFilename := filepath.Base(formSigHeader.Filename)
+	formSigFile, _, err := r.FormFile("signature")
+	if err != nil {
+		log.Printf("Warning: No signature file ERROR: %v\n", err)
+	} else {
+		formPkgHeader.Filename = formPkgHeader.Filename + ".sig"
+		saveMultipartFile(formSigFile, formPkgHeader, a.repos[targetRepo])
+	}
 
-	_, _ = formPkgFile, pkgFilename
-	// TODO: Write package and signature(if present) to repo/filename
+	// TODO: Use repo-add to add package to database
 
 	a.storage.StorePackageFile(fmt.Sprintf("%s/%s", targetRepo, targetPkgName), "")
 
-	w.WriteHeader(http.StatusNotImplemented)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (a *API) deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
@@ -82,11 +87,27 @@ func (a *API) deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) isValidRepo(r string) bool {
-	for _, repo := range a.repos {
+	for repo := range a.repos {
 		if r == repo {
 			return true
 		}
 	}
 
 	return false
+}
+
+func saveMultipartFile(mFile multipart.File, header *multipart.FileHeader, repoPath string) error {
+	dest := repoPath + "/x86_64/" + filepath.Base(filepath.Clean(header.Filename))
+
+	dst, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer dst.Close()
+
+	if _, err := io.Copy(dst, mFile); err != nil {
+		return err
+	}
+
+	return nil
 }
