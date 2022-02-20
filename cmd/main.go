@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -12,19 +14,27 @@ import (
 )
 
 func main() {
-	repoPaths, ok := os.LookupEnv("BLINKY_REPO_PATH")
+	repoPathStr, ok := os.LookupEnv("BLINKY_REPO_PATH")
 	if !ok {
 		cwd, err := os.Getwd()
 		if err != nil {
 			panic(err)
 		}
-		repoPaths = cwd + "/repo"
+		repoPathStr = cwd + "/repo"
+	}
+
+	repoPaths := strings.Split(repoPathStr, ":")
+
+	for _, v := range repoPaths {
+		if err := os.MkdirAll(v+"/x86_64", 0777); err != nil {
+			log.Printf("WARNING: Unable to create %s because of the following error: %v", v+"/x86_64", err)
+		}
 	}
 
 	rootRouter := mux.NewRouter()
 
 	// The PathPrefix value and base string must be the same so that the file server can properly serve the files.
-	registerRepoPaths(rootRouter.PathPrefix("/repo").Subrouter(), "/repo", strings.Split(repoPaths, ":"))
+	registerRepoPaths(rootRouter.PathPrefix("/repo").Subrouter(), "/repo", repoPaths)
 
 	ds, err := jsonds.New("/var/lib/blinky/packageAssociations.json") // TODO: Allow user to override with env vars
 	if err != nil {
@@ -36,6 +46,7 @@ func main() {
 
 	http.Handle("/", rootRouter)
 
+	fmt.Println("Blinky is now listening for connections on port 9000")
 	http.ListenAndServe(":9000", nil)
 }
 
@@ -47,12 +58,10 @@ func registerRepoPaths(router *mux.Router, base string, repoPaths []string) {
 	}
 }
 
-func correlateRepoNames(repoPaths string) map[string]string {
+func correlateRepoNames(repoPaths []string) map[string]string {
 	m := make(map[string]string)
 
-	split := strings.Split(repoPaths, ":")
-
-	for _, path := range split {
+	for _, path := range repoPaths {
 		m[filepath.Base(path)] = path
 	}
 
