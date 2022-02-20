@@ -1,18 +1,21 @@
 package apiunstable
 
 import (
+	"fmt"
+	"log"
 	"net/http"
+	"path/filepath"
 
 	"github.com/BrenekH/blinky"
 	"github.com/gorilla/mux"
 )
 
 func New(storageProvider blinky.PackageNameToFileProvider, foundRepos []string) API {
-	return API{storage: &storageProvider, repos: foundRepos}
+	return API{storage: storageProvider, repos: foundRepos}
 }
 
 type API struct {
-	storage *blinky.PackageNameToFileProvider
+	storage blinky.PackageNameToFileProvider
 	repos   []string
 }
 
@@ -30,11 +33,32 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 	_ = targetPkgName
 
 	if !a.isValidRepo(targetRepo) {
-		w.Write([]byte("Invalid repository"))
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Invalid repository"))
+		return
 	}
 
-	// TODO: Implement
+	formPkgFile, formPkgHeader, err := r.FormFile("package")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+
+	// formSigFile, formSigHeader, err := r.FormFile("signature")
+	// if err != nil {
+	// 	w.WriteHeader(http.StatusInternalServerError)
+	// 	log.Println(err)
+	// 	return
+	// }
+
+	pkgFilename := filepath.Base(formPkgHeader.Filename)
+	// sigFilename := filepath.Base(formSigHeader.Filename)
+
+	_, _ = formPkgFile, pkgFilename
+	// TODO: Write package and signature(if present) to repo/filename
+
+	a.storage.StorePackageFile(fmt.Sprintf("%s/%s", targetRepo, targetPkgName), "")
 
 	w.WriteHeader(http.StatusNotImplemented)
 }
@@ -47,8 +71,9 @@ func (a *API) deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
 	_ = targetPkgName
 
 	if !a.isValidRepo(targetRepo) {
-		w.Write([]byte("Invalid repository"))
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Invalid repository"))
+		return
 	}
 
 	// TODO: Implement
