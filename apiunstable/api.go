@@ -7,8 +7,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func New(storageProvider *blinky.PackageNameToFileProvider, foundRepos []string) API {
-	return API{storage: storageProvider, repos: foundRepos}
+func New(storageProvider blinky.PackageNameToFileProvider, foundRepos []string) API {
+	return API{storage: &storageProvider, repos: foundRepos}
 }
 
 type API struct {

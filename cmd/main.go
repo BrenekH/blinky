@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/BrenekH/blinky/apiunstable"
+	"github.com/BrenekH/blinky/jsonds"
 	"github.com/gorilla/mux"
 )
 
@@ -25,7 +26,12 @@ func main() {
 	// The PathPrefix value and base string must be the same so that the file server can properly serve the files.
 	registerRepoPaths(rootRouter.PathPrefix("/repo").Subrouter(), "/repo", strings.Split(repoPaths, ":"))
 
-	apiUnstable := apiunstable.New("", extractRepoNames(repoPaths))
+	ds, err := jsonds.New("./db.json")
+	if err != nil {
+		panic(err)
+	}
+
+	apiUnstable := apiunstable.New(&ds, extractRepoNames(repoPaths))
 	apiUnstable.Register(rootRouter.PathPrefix("/api/unstable/").Subrouter())
 
 	http.Handle("/", rootRouter)
