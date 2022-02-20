@@ -3,15 +3,18 @@ package apiunstable
 import (
 	"net/http"
 
+	"github.com/BrenekH/blinky"
 	"github.com/gorilla/mux"
 )
 
-func New() API {
-	// TODO: Require a database struct to be passed for use by the API.
-	return API{}
+func New(storageProvider *blinky.PackageNameToFileProvider, foundRepos []string) API {
+	return API{storage: storageProvider, repos: foundRepos}
 }
 
-type API struct{}
+type API struct {
+	storage *blinky.PackageNameToFileProvider
+	repos   []string
+}
 
 // Register registers http handlers associated with the unstable API.
 func (a *API) Register(router *mux.Router) {
@@ -24,7 +27,12 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	targetRepo := vars["repo"]
 	targetPkgName := vars["package_name"]
-	_, _ = targetRepo, targetPkgName
+	_ = targetPkgName
+
+	if !a.isValidRepo(targetRepo) {
+		w.Write([]byte("Invalid repository"))
+		w.WriteHeader(http.StatusBadRequest)
+	}
 
 	// TODO: Implement
 
@@ -36,9 +44,24 @@ func (a *API) deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	targetRepo := vars["repo"]
 	targetPkgName := vars["package_name"]
-	_, _ = targetRepo, targetPkgName
+	_ = targetPkgName
+
+	if !a.isValidRepo(targetRepo) {
+		w.Write([]byte("Invalid repository"))
+		w.WriteHeader(http.StatusBadRequest)
+	}
 
 	// TODO: Implement
 
 	w.WriteHeader(http.StatusNotImplemented)
+}
+
+func (a *API) isValidRepo(r string) bool {
+	for _, repo := range a.repos {
+		if r == repo {
+			return true
+		}
+	}
+
+	return false
 }

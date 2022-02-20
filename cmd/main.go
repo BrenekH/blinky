@@ -25,7 +25,7 @@ func main() {
 	// The PathPrefix value and base string must be the same so that the file server can properly serve the files.
 	registerRepoPaths(rootRouter.PathPrefix("/repo").Subrouter(), "/repo", strings.Split(repoPaths, ":"))
 
-	apiUnstable := apiunstable.New()
+	apiUnstable := apiunstable.New("", extractRepoNames(repoPaths))
 	apiUnstable.Register(rootRouter.PathPrefix("/api/unstable/").Subrouter())
 
 	http.Handle("/", rootRouter)
@@ -39,4 +39,16 @@ func registerRepoPaths(router *mux.Router, base string, repoPaths []string) {
 		repoNameSlashed := "/" + repoName + "/"
 		router.Handle(repoNameSlashed, http.StripPrefix(base+repoNameSlashed, http.FileServer(http.Dir(path))))
 	}
+}
+
+func extractRepoNames(repoPaths string) []string {
+	s := []string{}
+
+	split := strings.Split(repoPaths, ":")
+
+	for _, path := range split {
+		s = append(s, filepath.Base(path))
+	}
+
+	return s
 }
