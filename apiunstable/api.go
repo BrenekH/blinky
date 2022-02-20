@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/BrenekH/blinky"
@@ -57,11 +58,19 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Warning: No signature file ERROR: %v\n", err)
 	} else {
-		formPkgHeader.Filename = formPkgHeader.Filename + ".sig"
+		// Save the signature file, ensuring that it gets saved using the correct format no matter the filename sent.
+		temp := formPkgHeader.Filename
+		formPkgHeader.Filename = temp + ".sig"
 		saveMultipartFile(formSigFile, formPkgHeader, a.repos[targetRepo])
+		formPkgHeader.Filename = temp
 	}
 
-	// TODO: Use repo-add to add package to database
+	cmd := exec.Command("repo-add", "-q", "-R", "--nocolor", a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/x86_64/"+formPkgHeader.Filename)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		log.Printf("ERROR running %s: %s", cmd.String(), string(out))
+		http.Error(w, "Failed to add package to the database. Check the server logs for more information.", http.StatusInternalServerError)
+		return
+	}
 
 	a.storage.StorePackageFile(fmt.Sprintf("%s/%s", targetRepo, targetPkgName), "")
 

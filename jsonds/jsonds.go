@@ -38,6 +38,12 @@ func (j *JSONDataStore) StorePackageFile(packageName, filePath string) (err erro
 	return j.saveFile()
 }
 
+func (j *JSONDataStore) DeletePackageFileEntry(packageName string) (err error) {
+	delete(j.data, packageName)
+
+	return j.saveFile()
+}
+
 func (j *JSONDataStore) loadFile() error {
 	b, err := os.ReadFile(j.filePath)
 	if err != nil {

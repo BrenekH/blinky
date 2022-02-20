@@ -6,4 +6,5 @@ package blinky
 type PackageNameToFileProvider interface {
 	PackageFile(packageName string) (filePath string, err error)
 	StorePackageFile(packageName, filePath string) (err error)
+	DeletePackageFileEntry(packageName string) (err error)
 }
