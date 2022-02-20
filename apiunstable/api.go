@@ -82,7 +82,6 @@ func (a *API) deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	targetRepo := vars["repo"]
 	targetPkgName := vars["package_name"]
-	_ = targetPkgName
 
 	if !a.isValidRepo(targetRepo) {
 		w.WriteHeader(http.StatusBadRequest)
@@ -90,9 +89,35 @@ func (a *API) deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Implement
+	cmd := exec.Command("repo-remove", "-q", "--nocolor", a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", targetPkgName)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		log.Printf("ERROR running %s: %s", cmd.String(), string(out))
+		http.Error(w, "Failed to remove package from the database. Check the server logs for more information.", http.StatusInternalServerError)
+		return
+	}
 
-	w.WriteHeader(http.StatusNotImplemented)
+	pkgFile, err := a.storage.PackageFile(fmt.Sprintf("%s/%s", targetRepo, targetPkgName))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Unable to find %s/%s in database.", targetRepo, targetPkgName), http.StatusInternalServerError)
+		return
+	}
+
+	pkgFile = a.repos[targetRepo] + "/x86_64/" + pkgFile
+
+	// Remove primary package file
+	if err := os.Remove(pkgFile); err != nil {
+		http.Error(w, fmt.Sprintf("Unable to remove %s because of error: %v", pkgFile, err), http.StatusInternalServerError)
+		return
+	}
+
+	// Remove signature file
+	if err := os.Remove(pkgFile + ".sig"); err != nil {
+		log.Printf("Unable to remove %s because of error: %v\n", pkgFile+".sig", err)
+	}
+
+	a.storage.DeletePackageFileEntry(fmt.Sprintf("%s/%s", targetRepo, targetPkgName))
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (a *API) isValidRepo(r string) bool {
