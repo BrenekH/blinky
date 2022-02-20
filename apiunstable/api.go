@@ -72,7 +72,7 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	a.storage.StorePackageFile(fmt.Sprintf("%s/%s", targetRepo, targetPkgName), "")
+	a.storage.StorePackageFile(fmt.Sprintf("%s/%s", targetRepo, targetPkgName), formPkgHeader.Filename)
 
 	w.WriteHeader(http.StatusOK)
 }
