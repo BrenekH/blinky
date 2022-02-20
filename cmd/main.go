@@ -26,7 +26,7 @@ func main() {
 	// The PathPrefix value and base string must be the same so that the file server can properly serve the files.
 	registerRepoPaths(rootRouter.PathPrefix("/repo").Subrouter(), "/repo", strings.Split(repoPaths, ":"))
 
-	ds, err := jsonds.New("./db.json")
+	ds, err := jsonds.New("/var/lib/blinky/packageAssociations.json") // TODO: Allow user to override with env vars
 	if err != nil {
 		panic(err)
 	}
