@@ -41,7 +41,12 @@ func main() {
 		panic(err)
 	}
 
-	apiUnstable := apiunstable.New(&ds, correlateRepoNames(repoPaths))
+	requireSignedPkgs := false
+	if strings.ToLower(os.Getenv("BLINKY_REQUIRE_SIGNED_PKGS")) == "true" {
+		requireSignedPkgs = true
+	}
+
+	apiUnstable := apiunstable.New(&ds, correlateRepoNames(repoPaths), requireSignedPkgs)
 	apiUnstable.Register(rootRouter.PathPrefix("/api/unstable/").Subrouter())
 
 	http.Handle("/", rootRouter)

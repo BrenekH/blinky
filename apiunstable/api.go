@@ -14,13 +14,14 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func New(storageProvider blinky.PackageNameToFileProvider, foundRepos map[string]string) API {
-	return API{storage: storageProvider, repos: foundRepos}
+func New(storageProvider blinky.PackageNameToFileProvider, foundRepos map[string]string, requireSignedPackages bool) API {
+	return API{storage: storageProvider, repos: foundRepos, requireSignedPackages: requireSignedPackages}
 }
 
 type API struct {
-	storage blinky.PackageNameToFileProvider
-	repos   map[string]string // Map of repo name to repo path
+	storage               blinky.PackageNameToFileProvider
+	repos                 map[string]string // Map of repo name to repo path
+	requireSignedPackages bool
 }
 
 // Register registers http handlers associated with the unstable API.
@@ -34,7 +35,6 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	targetRepo := vars["repo"]
 	targetPkgName := vars["package_name"]
-	_ = targetPkgName
 
 	if !a.isValidRepo(targetRepo) {
 		w.WriteHeader(http.StatusBadRequest)
@@ -48,15 +48,18 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 	formPkgFile, formPkgHeader, err := r.FormFile("package")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Println(err)
+		log.Printf("Reading FormFile: %v\n", err)
 		return
 	}
 
-	saveMultipartFile(formPkgFile, formPkgHeader, a.repos[targetRepo])
-
 	formSigFile, _, err := r.FormFile("signature")
 	if err != nil {
-		log.Printf("Warning: No signature file ERROR: %v\n", err)
+		if a.requireSignedPackages {
+			http.Error(w, "A signature file is required to upload to this server", http.StatusBadRequest)
+			return
+		} else {
+			log.Printf("Warning: No signature file ERROR: %v\n", err)
+		}
 	} else {
 		// Save the signature file, ensuring that it gets saved using the correct format no matter the filename sent.
 		temp := formPkgHeader.Filename
@@ -64,6 +67,10 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 		saveMultipartFile(formSigFile, formPkgHeader, a.repos[targetRepo])
 		formPkgHeader.Filename = temp
 	}
+
+	// This is after the signature file so that if the server requires a signed package, the file doesn't get copied
+	// until the request is known to have a .sig file.
+	saveMultipartFile(formPkgFile, formPkgHeader, a.repos[targetRepo])
 
 	cmd := exec.Command("repo-add", "-q", "-R", "--nocolor", a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/x86_64/"+formPkgHeader.Filename)
 	if out, err := cmd.CombinedOutput(); err != nil {
