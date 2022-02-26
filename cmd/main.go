@@ -9,21 +9,24 @@ import (
 	"strings"
 
 	"github.com/BrenekH/blinky/apiunstable"
+	"github.com/BrenekH/blinky/cmd/viperutils"
 	"github.com/BrenekH/blinky/jsonds"
 	"github.com/gorilla/mux"
+	"github.com/spf13/viper"
 )
 
 func main() {
-	repoPathStr, ok := os.LookupEnv("BLINKY_REPO_PATH")
-	if !ok {
-		cwd, err := os.Getwd()
-		if err != nil {
-			panic(err)
-		}
-		repoPathStr = cwd + "/repo"
+	if err := viperutils.Setup(); err != nil {
+		panic(err)
 	}
 
-	repoPaths := strings.Split(repoPathStr, ":")
+	repoPath := viper.GetString("RepoPath")
+	jsonDBPath := viper.GetString("ConfigDir") + "/packageAssociations.json"
+	requireSignedPkgs := viper.GetBool("RequireSignedPkgs")
+	gpgDir := viper.GetString("GPGDir")
+	httpPort := viper.GetString("HTTPPort")
+
+	repoPaths := strings.Split(repoPath, ":")
 
 	for _, v := range repoPaths {
 		if err := os.MkdirAll(v+"/x86_64", 0777); err != nil {
@@ -36,23 +39,18 @@ func main() {
 	// The PathPrefix value and base string must be the same so that the file server can properly serve the files.
 	registerRepoPaths(rootRouter.PathPrefix("/repo").Subrouter(), "/repo", repoPaths)
 
-	ds, err := jsonds.New("/var/lib/blinky/packageAssociations.json") // TODO: Allow user to override with env vars
+	ds, err := jsonds.New(jsonDBPath) // TODO: Allow user to override with env vars
 	if err != nil {
 		panic(err)
 	}
 
-	requireSignedPkgs := false
-	if strings.ToLower(os.Getenv("BLINKY_REQUIRE_SIGNED_PKGS")) == "true" {
-		requireSignedPkgs = true
-	}
-
-	apiUnstable := apiunstable.New(&ds, correlateRepoNames(repoPaths), "/var/lib/blinky/gnupg", requireSignedPkgs, false)
+	apiUnstable := apiunstable.New(&ds, correlateRepoNames(repoPaths), gpgDir, requireSignedPkgs, false)
 	apiUnstable.Register(rootRouter.PathPrefix("/api/unstable/").Subrouter())
 
 	http.Handle("/", rootRouter)
 
-	fmt.Println("Blinky is now listening for connections on port 9000")
-	http.ListenAndServe(":9000", nil)
+	fmt.Printf("Blinky is now listening for connections on port %s\n", httpPort)
+	http.ListenAndServe(fmt.Sprintf(":%s", httpPort), nil)
 }
 
 func registerRepoPaths(router *mux.Router, base string, repoPaths []string) {
