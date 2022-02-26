@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -20,13 +21,32 @@ func main() {
 		panic(err)
 	}
 
+	fmt.Printf("Configuration: %+v\n", viper.AllSettings())
+
 	repoPath := viper.GetString("RepoPath")
 	jsonDBPath := viper.GetString("ConfigDir") + "/packageAssociations.json"
 	requireSignedPkgs := viper.GetBool("RequireSignedPkgs")
 	gpgDir := viper.GetString("GPGDir")
+	signingKey := viper.GetString("SigningKeyFile")
 	httpPort := viper.GetString("HTTPPort")
 
-	fmt.Printf("Configuration: %+v\n", viper.AllSettings())
+	os.RemoveAll(gpgDir) // We don't care if this fails because of a missing dir, and if it's something else, we'll find out soon.
+
+	var signDB bool
+	if signingKey != "" {
+		signDB = true
+
+		if err := os.MkdirAll(gpgDir, 0700); err != nil {
+			panic(err)
+		}
+
+		cmd := exec.Command("gpg", "--allow-secret-key-import", "--import", signingKey)
+		cmd.Env = append(cmd.Env, fmt.Sprintf("GNUPGHOME=%s", gpgDir))
+		if b, err := cmd.CombinedOutput(); err != nil {
+			log.Println(string(b))
+			panic(err)
+		}
+	}
 
 	repoPaths := strings.Split(repoPath, ":")
 
@@ -36,6 +56,20 @@ func main() {
 		}
 	}
 
+	registerHTTPHandlers(repoPaths, jsonDBPath, gpgDir, requireSignedPkgs, signDB)
+
+	fmt.Printf("Blinky is now listening for connections on port %s\n", httpPort)
+	http.ListenAndServe(fmt.Sprintf(":%s", httpPort), nil)
+
+	// This may or may not ever be reached :shrug:
+	if signDB {
+		if err := os.RemoveAll(gpgDir); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func registerHTTPHandlers(repoPaths []string, jsonDBPath, gpgDir string, requireSignedPkgs, signDB bool) {
 	rootRouter := mux.NewRouter()
 
 	// The PathPrefix value and base string must be the same so that the file server can properly serve the files.
@@ -46,13 +80,11 @@ func main() {
 		panic(err)
 	}
 
-	apiUnstable := apiunstable.New(&ds, correlateRepoNames(repoPaths), gpgDir, requireSignedPkgs, false)
+	apiUnstable := apiunstable.New(&ds, correlateRepoNames(repoPaths), gpgDir, requireSignedPkgs, signDB)
 	apiUnstable.Register(rootRouter.PathPrefix("/api/unstable/").Subrouter())
 
 	http.Handle("/", rootRouter)
 
-	fmt.Printf("Blinky is now listening for connections on port %s\n", httpPort)
-	http.ListenAndServe(fmt.Sprintf(":%s", httpPort), nil)
 }
 
 func registerRepoPaths(router *mux.Router, base string, repoPaths []string) {

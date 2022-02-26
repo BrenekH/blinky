@@ -1,4 +1,5 @@
 repo/
+*.key
 
 ### ArchLinuxPackages ###
 *.tar
