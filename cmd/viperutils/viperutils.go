@@ -22,7 +22,17 @@ func Setup() error {
 	SetupEnvVars()
 	SetupFlags()
 
-	return viper.ReadInConfig()
+	if err := viper.ReadInConfig(); err != nil {
+		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+			// Config file not found; ignore error if desired
+			return nil
+		} else {
+			// Config file was found but another error was produced
+			return err
+		}
+	}
+
+	return nil
 }
 
 func SetupDefaults() error {

@@ -26,6 +26,8 @@ func main() {
 	gpgDir := viper.GetString("GPGDir")
 	httpPort := viper.GetString("HTTPPort")
 
+	fmt.Printf("Configuration: %+v\n", viper.AllSettings())
+
 	repoPaths := strings.Split(repoPath, ":")
 
 	for _, v := range repoPaths {
