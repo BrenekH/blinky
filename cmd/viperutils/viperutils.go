@@ -58,6 +58,9 @@ func SetupDefaults() error {
 	// HTTPPort
 	viper.SetDefault("HTTPPort", "9000")
 
+	// APIKey
+	viper.SetDefault("APIKey", "")
+
 	return nil
 }
 
@@ -70,6 +73,7 @@ func SetupEnvVars() {
 	viper.BindEnv("ConfigDir", "BLINKY_CONFIG_DIR")
 	viper.BindEnv("GPGDir", "BLINKY_GPG_DIR")
 	viper.BindEnv("HTTPPort", "BLINKY_PORT")
+	viper.BindEnv("APIKey", "BLINKY_API_KEY")
 }
 
 func SetupFlags() {
@@ -86,6 +90,8 @@ func SetupFlags() {
 
 	pflag.StringP("http-port", "p", "", "--http-port, -p <port number>")
 
+	pflag.String("api-key", "", "--api-key <key>")
+
 	pflag.Parse()
 
 	viper.BindPFlag("RepoPath", pflag.Lookup("repo-path"))
@@ -94,4 +100,5 @@ func SetupFlags() {
 	viper.BindPFlag("ConfigDir", pflag.Lookup("config-dir"))
 	viper.BindPFlag("GPGDir", pflag.Lookup("gpg-dir"))
 	viper.BindPFlag("HTTPPort", pflag.Lookup("http-port"))
+	viper.BindPFlag("APIKey", pflag.Lookup("api-key"))
 }
