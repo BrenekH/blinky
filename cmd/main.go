@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -34,17 +35,21 @@ func main() {
 
 	var signDB bool
 	if signingKey != "" {
-		signDB = true
+		if _, err := os.Stat(signingKey); err == nil {
+			signDB = true
 
-		if err := os.MkdirAll(gpgDir, 0700); err != nil {
-			panic(err)
-		}
+			if err := os.MkdirAll(gpgDir, 0700); err != nil {
+				panic(err)
+			}
 
-		cmd := exec.Command("gpg", "--allow-secret-key-import", "--import", signingKey)
-		cmd.Env = append(cmd.Env, fmt.Sprintf("GNUPGHOME=%s", gpgDir))
-		if b, err := cmd.CombinedOutput(); err != nil {
-			log.Println(string(b))
-			panic(err)
+			cmd := exec.Command("gpg", "--allow-secret-key-import", "--import", signingKey)
+			cmd.Env = append(cmd.Env, fmt.Sprintf("GNUPGHOME=%s", gpgDir))
+			if b, err := cmd.CombinedOutput(); err != nil {
+				log.Println(string(b))
+				panic(err)
+			}
+		} else if errors.Is(err, os.ErrNotExist) {
+			log.Printf("WARNING: The signing key %s does not exist\n", signingKey)
 		}
 	}
 
