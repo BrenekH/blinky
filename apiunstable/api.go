@@ -14,11 +14,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func New(storageProvider blinky.PackageNameToFileProvider, foundRepos map[string]string, gnupgDir string, requireSignedPackages, useSignedDB bool) API {
+func New(storageProvider blinky.PackageNameToFileProvider, authProvider blinky.Authenticator, foundRepos map[string]string, gnupgDir string, requireSignedPackages, useSignedDB bool) API {
 	return API{
 		gnupgDir:              gnupgDir,
 		repos:                 foundRepos,
 		useSignedDB:           useSignedDB,
+		auth:                  authProvider,
 		storage:               storageProvider,
 		requireSignedPackages: requireSignedPackages,
 	}
@@ -26,6 +27,7 @@ func New(storageProvider blinky.PackageNameToFileProvider, foundRepos map[string
 
 type API struct {
 	storage               blinky.PackageNameToFileProvider
+	auth                  blinky.Authenticator
 	repos                 map[string]string // Map of repo name to repo path
 	requireSignedPackages bool
 	useSignedDB           bool
@@ -34,8 +36,8 @@ type API struct {
 
 // Register registers http handlers associated with the unstable API.
 func (a *API) Register(router *mux.Router) {
-	router.HandleFunc("/{repo}/package/{package_name}", a.putRepoPkg).Methods(http.MethodPut)
-	router.HandleFunc("/{repo}/package/{package_name}", a.deleteRepoPkg).Methods(http.MethodDelete)
+	router.Handle("/{repo}/package/{package_name}", a.auth.CreateMiddleware(http.HandlerFunc(a.putRepoPkg))).Methods(http.MethodPut)
+	router.Handle("/{repo}/package/{package_name}", a.auth.CreateMiddleware(http.HandlerFunc(a.deleteRepoPkg))).Methods(http.MethodDelete)
 }
 
 func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
