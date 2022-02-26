@@ -82,7 +82,7 @@ func registerHTTPHandlers(repoPaths []string, jsonDBPath, gpgDir, apiKey string,
 	// The PathPrefix value and base string must be the same so that the file server can properly serve the files.
 	registerRepoPaths(rootRouter.PathPrefix("/repo").Subrouter(), "/repo", repoPaths)
 
-	ds, err := jsonds.New(jsonDBPath) // TODO: Allow user to override with env vars
+	ds, err := jsonds.New(jsonDBPath)
 	if err != nil {
 		panic(err)
 	}
