@@ -46,7 +46,7 @@ func main() {
 		requireSignedPkgs = true
 	}
 
-	apiUnstable := apiunstable.New(&ds, correlateRepoNames(repoPaths), requireSignedPkgs)
+	apiUnstable := apiunstable.New(&ds, correlateRepoNames(repoPaths), "/var/lib/blinky/gnupg", requireSignedPkgs, false)
 	apiUnstable.Register(rootRouter.PathPrefix("/api/unstable/").Subrouter())
 
 	http.Handle("/", rootRouter)

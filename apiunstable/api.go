@@ -14,14 +14,22 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func New(storageProvider blinky.PackageNameToFileProvider, foundRepos map[string]string, requireSignedPackages bool) API {
-	return API{storage: storageProvider, repos: foundRepos, requireSignedPackages: requireSignedPackages}
+func New(storageProvider blinky.PackageNameToFileProvider, foundRepos map[string]string, gnupgDir string, requireSignedPackages, useSignedDB bool) API {
+	return API{
+		gnupgDir:              gnupgDir,
+		repos:                 foundRepos,
+		useSignedDB:           useSignedDB,
+		storage:               storageProvider,
+		requireSignedPackages: requireSignedPackages,
+	}
 }
 
 type API struct {
 	storage               blinky.PackageNameToFileProvider
 	repos                 map[string]string // Map of repo name to repo path
 	requireSignedPackages bool
+	useSignedDB           bool
+	gnupgDir              string // The location to set GNUPGHOME to, when repo-add/repo-remove.
 }
 
 // Register registers http handlers associated with the unstable API.
@@ -72,14 +80,26 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 	// until the request is known to have a .sig file.
 	saveMultipartFile(formPkgFile, formPkgHeader, a.repos[targetRepo])
 
-	cmd := exec.Command("repo-add", "-q", "-R", "--nocolor", a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/x86_64/"+formPkgHeader.Filename)
+	// Build and run repo-add command, including the --sign arg if requested
+	args := []string{"-q", "-R", "--nocolor"}
+	if a.useSignedDB {
+		args = append(args, "--sign")
+	}
+	args = append(args, a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/x86_64/"+formPkgHeader.Filename)
+
+	cmd := exec.Command("repo-add", args...)
+	cmd.Env = append(cmd.Env, fmt.Sprintf("GNUPGHOME=%s", a.gnupgDir))
 	if out, err := cmd.CombinedOutput(); err != nil {
 		log.Printf("ERROR running %s: %s", cmd.String(), string(out))
 		http.Error(w, "Failed to add package to the database. Check the server logs for more information.", http.StatusInternalServerError)
 		return
 	}
 
-	a.storage.StorePackageFile(fmt.Sprintf("%s/%s", targetRepo, targetPkgName), formPkgHeader.Filename)
+	if err := a.storage.StorePackageFile(fmt.Sprintf("%s/%s", targetRepo, targetPkgName), formPkgHeader.Filename); err != nil {
+		log.Println(err)
+		http.Error(w, fmt.Sprintf("Got error while saving new Blinky db entry: %v", err), http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 }
@@ -96,13 +116,23 @@ func (a *API) deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cmd := exec.Command("repo-remove", "-q", "--nocolor", a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", targetPkgName)
+	// Build and run repo-remove command, including the --sign arg if requested
+	args := []string{"-q", "--nocolor"}
+	if a.useSignedDB {
+		args = append(args, "--sign")
+	}
+	args = append(args, a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", targetPkgName)
+
+	cmd := exec.Command("repo-remove", args...)
+	cmd.Env = append(cmd.Env, fmt.Sprintf("GNUPGHOME=%s", a.gnupgDir))
+
 	if out, err := cmd.CombinedOutput(); err != nil {
 		log.Printf("ERROR running %s: %s", cmd.String(), string(out))
 		http.Error(w, "Failed to remove package from the database. Check the server logs for more information.", http.StatusInternalServerError)
 		return
 	}
 
+	// Locate package file from Blinky database
 	pkgFile, err := a.storage.PackageFile(fmt.Sprintf("%s/%s", targetRepo, targetPkgName))
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Unable to find %s/%s in database.", targetRepo, targetPkgName), http.StatusInternalServerError)
@@ -122,7 +152,11 @@ func (a *API) deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Unable to remove %s because of error: %v\n", pkgFile+".sig", err)
 	}
 
-	a.storage.DeletePackageFileEntry(fmt.Sprintf("%s/%s", targetRepo, targetPkgName))
+	if err := a.storage.DeletePackageFileEntry(fmt.Sprintf("%s/%s", targetRepo, targetPkgName)); err != nil {
+		log.Println(err)
+		http.Error(w, fmt.Sprintf("Got error while deleting package file from Blinky database: %v", err), http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 }
