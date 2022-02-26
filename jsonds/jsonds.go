@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 func New(saveLocation string) (JSONDataStore, error) {
@@ -60,6 +61,10 @@ func (j *JSONDataStore) loadFile() error {
 func (j *JSONDataStore) saveFile() error {
 	b, err := json.Marshal(j.data)
 	if err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(filepath.Dir(j.filePath), 0777); err != nil {
 		return err
 	}
 
