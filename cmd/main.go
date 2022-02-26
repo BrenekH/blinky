@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/BrenekH/blinky/apikeyauth"
 	"github.com/BrenekH/blinky/apiunstable"
 	"github.com/BrenekH/blinky/cmd/viperutils"
 	"github.com/BrenekH/blinky/jsonds"
@@ -30,6 +31,7 @@ func main() {
 	gpgDir := viper.GetString("GPGDir")
 	signingKey := viper.GetString("SigningKeyFile")
 	httpPort := viper.GetString("HTTPPort")
+	apiKey := viper.GetString("APIKey")
 
 	os.RemoveAll(gpgDir) // We don't care if this fails because of a missing dir, and if it's something else, we'll find out soon.
 
@@ -61,7 +63,7 @@ func main() {
 		}
 	}
 
-	registerHTTPHandlers(repoPaths, jsonDBPath, gpgDir, requireSignedPkgs, signDB)
+	registerHTTPHandlers(repoPaths, jsonDBPath, gpgDir, apiKey, requireSignedPkgs, signDB)
 
 	fmt.Printf("Blinky is now listening for connections on port %s\n", httpPort)
 	http.ListenAndServe(fmt.Sprintf(":%s", httpPort), nil)
@@ -74,7 +76,7 @@ func main() {
 	}
 }
 
-func registerHTTPHandlers(repoPaths []string, jsonDBPath, gpgDir string, requireSignedPkgs, signDB bool) {
+func registerHTTPHandlers(repoPaths []string, jsonDBPath, gpgDir, apiKey string, requireSignedPkgs, signDB bool) {
 	rootRouter := mux.NewRouter()
 
 	// The PathPrefix value and base string must be the same so that the file server can properly serve the files.
@@ -85,7 +87,9 @@ func registerHTTPHandlers(repoPaths []string, jsonDBPath, gpgDir string, require
 		panic(err)
 	}
 
-	apiUnstable := apiunstable.New(&ds, correlateRepoNames(repoPaths), gpgDir, requireSignedPkgs, signDB)
+	apiAuth := apikeyauth.New(apiKey)
+
+	apiUnstable := apiunstable.New(&ds, &apiAuth, correlateRepoNames(repoPaths), gpgDir, requireSignedPkgs, signDB)
 	apiUnstable.Register(rootRouter.PathPrefix("/api/unstable/").Subrouter())
 
 	http.Handle("/", rootRouter)
