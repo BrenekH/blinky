@@ -2,7 +2,10 @@ package commands
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
+	"github.com/BrenekH/blinky/cmd/blinky/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -14,12 +17,60 @@ var loginCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		setAsDefault := viper.GetBool("default")
-		flagUsername := viper.Get("username")
-		flagPassword := viper.Get("password")
-
-		fmt.Println(setAsDefault, flagUsername, flagPassword)
-
+		username := viper.GetString("username")
+		password := viper.GetString("password")
+		_, _, _ = setAsDefault, username, password
 		// NOTE: If auth info is already in DB, ask if user would like to update it.
+
+		if len(args) != 1 {
+			fmt.Printf("Incorrect number of arguments for login command. Expected 1, got %v.\n\nUse blinky login --help for more information.\n", len(args))
+			os.Exit(1)
+		}
+		serverURL := args[0]
+
+		serverDB, err := util.ReadServerDB()
+		if err != nil {
+			fmt.Printf("Unexpected error while reading servers.json: %v\n", err)
+			os.Exit(1)
+		}
+
+		serverEntry, ok := serverDB.Servers[serverURL]
+		if ok {
+			fmt.Printf("Login information is already available for %s\n", serverURL)
+			userIn := util.Input("Would you like to override (y/N)? ")
+			if strings.ToLower(userIn) == "y" {
+				if username == "" {
+					username = util.Input("Username: ")
+				}
+				if password == "" {
+					password = util.SecureInput("Password: ")
+				}
+
+				serverEntry.Username = username
+				serverEntry.Password = password
+				serverDB.Servers[serverURL] = serverEntry
+			}
+		} else {
+			if username == "" {
+				username = util.Input("Username: ")
+			}
+			if password == "" {
+				password = util.SecureInput("Password: ")
+			}
+
+			serverEntry.Username = username
+			serverEntry.Password = password
+			serverDB.Servers[serverURL] = serverEntry
+		}
+
+		if setAsDefault {
+			serverDB.DefaultServer = serverURL
+		}
+
+		if err := util.SaveServerDB(serverDB); err != nil {
+			fmt.Printf("Unexpected error while saving servers.json: %v\n", err)
+			os.Exit(1)
+		}
 	},
 }
 
