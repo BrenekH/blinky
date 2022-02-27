@@ -12,7 +12,7 @@ import (
 
 	"github.com/BrenekH/blinky/apikeyauth"
 	"github.com/BrenekH/blinky/apiunstable"
-	"github.com/BrenekH/blinky/cmd/viperutils"
+	"github.com/BrenekH/blinky/cmd/blinkyd/viperutils"
 	"github.com/BrenekH/blinky/jsonds"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
