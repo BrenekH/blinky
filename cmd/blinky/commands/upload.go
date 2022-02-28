@@ -2,12 +2,9 @@ package commands
 
 import (
 	"fmt"
-	"io"
-	"mime/multipart"
-	"net/http"
 	"os"
-	"path/filepath"
 
+	"github.com/BrenekH/blinky/clientlib"
 	"github.com/BrenekH/blinky/cmd/blinky/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -20,7 +17,7 @@ var uploadCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		server := viper.GetString("server")
-		// username := viper.GetString("username")
+		username := viper.GetString("username")
 		password := viper.GetString("password")
 		promptForPasswd := viper.GetBool("ask-pass")
 
@@ -39,9 +36,9 @@ var uploadCmd = &cobra.Command{
 			server = serverDB.DefaultServer
 		}
 
-		// if username == "" {
-		// 	username = serverDB.Servers[server].Username
-		// }
+		if username == "" {
+			username = serverDB.Servers[server].Username
+		}
 
 		if password == "" {
 			if promptForPasswd {
@@ -51,71 +48,14 @@ var uploadCmd = &cobra.Command{
 			}
 		}
 
+		client := clientlib.New(server, username, password)
+
 		repoName := args[0]
 		packageFiles := args[1:]
 
-		for _, pkg := range packageFiles {
-			fmt.Printf("Uploading %s\n", pkg)
-
-			r, w := io.Pipe()
-			writer := multipart.NewWriter(w)
-
-			go func() {
-				defer w.Close()
-				defer writer.Close()
-
-				file, err := os.Open(pkg)
-				if err != nil {
-					panic(err)
-				}
-				defer file.Close()
-
-				part, err := writer.CreateFormFile("package", filepath.Base(file.Name()))
-				if err != nil {
-					panic(err)
-				}
-
-				_, err = io.Copy(part, file)
-				if err != nil {
-					panic(err)
-				}
-
-				if sigFile, err := os.Open(pkg + ".sig"); err == nil {
-					part, err := writer.CreateFormFile("signature", filepath.Base(sigFile.Name()))
-					if err != nil {
-						panic(err)
-					}
-
-					_, err = io.Copy(part, sigFile)
-					if err != nil {
-						panic(err)
-					}
-				}
-			}()
-
-			// TODO: Decompress passed package file to identify the package name to be sent through the API
-			request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/api/unstable/%s/package/%s", server, repoName, "replace_me"), r)
-			if err != nil {
-				panic(err) // TODO: Handle this better
-			}
-
-			request.Header.Add("Authorization", password)
-			request.Header.Add("Content-Type", writer.FormDataContentType())
-
-			resp, err := http.DefaultClient.Do(request)
-			if err != nil {
-				panic(err) // TODO: Handle better
-			}
-			defer resp.Body.Close()
-
-			if resp.StatusCode != 200 {
-				b, _ := io.ReadAll(resp.Body)
-
-				fmt.Printf("Received a non-200 status code while uploading %s/%s: %s - %s", repoName, pkg, resp.Status, string(b))
-				os.Exit(1)
-			}
-
-			fmt.Printf("%s uploaded.\n", pkg)
+		if err := client.UploadPackageFiles(repoName, packageFiles...); err != nil {
+			fmt.Printf("Error while removing packages: %v", err)
+			os.Exit(1)
 		}
 	},
 }
