@@ -19,8 +19,6 @@ var loginCmd = &cobra.Command{
 		setAsDefault := viper.GetBool("default")
 		username := viper.GetString("username")
 		password := viper.GetString("password")
-		_, _, _ = setAsDefault, username, password
-		// NOTE: If auth info is already in DB, ask if user would like to update it.
 
 		if len(args) != 1 {
 			fmt.Printf("Incorrect number of arguments for login command. Expected 1, got %v.\n\nUse blinky login --help for more information.\n", len(args))
