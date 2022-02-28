@@ -1,12 +1,10 @@
 package commands
 
 import (
-	"bytes"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 
+	"github.com/BrenekH/blinky/clientlib"
 	"github.com/BrenekH/blinky/cmd/blinky/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -19,7 +17,7 @@ var removeCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		server := viper.GetString("server")
-		// username := viper.GetString("username")
+		username := viper.GetString("username")
 		password := viper.GetString("password")
 		promptForPasswd := viper.GetBool("ask-pass")
 
@@ -38,9 +36,9 @@ var removeCmd = &cobra.Command{
 			server = serverDB.DefaultServer
 		}
 
-		// if username == "" {
-		// 	username = serverDB.Servers[server].Username
-		// }
+		if username == "" {
+			username = serverDB.Servers[server].Username
+		}
 
 		if password == "" {
 			if promptForPasswd {
@@ -50,36 +48,14 @@ var removeCmd = &cobra.Command{
 			}
 		}
 
+		client := clientlib.New(server, username, password)
+
 		repoName := args[0]
 		packagesToRemove := args[1:]
 
-		// Will have to loop through each package and call the API one by one.
-		// Ideally the API would support multiple package removals at once.
-
-		for _, pkg := range packagesToRemove {
-			fmt.Printf("Removing %s\n", pkg)
-
-			r, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/api/unstable/%s/package/%s", server, repoName, pkg), bytes.NewBufferString(""))
-			if err != nil {
-				panic(err) // TODO: Handle this better
-			}
-
-			r.Header.Add("Authorization", password)
-
-			resp, err := http.DefaultClient.Do(r)
-			if err != nil {
-				panic(err) // TODO: Handle better
-			}
-			defer resp.Body.Close()
-
-			if resp.StatusCode != 200 {
-				b, _ := io.ReadAll(resp.Body)
-
-				fmt.Printf("Received a non-200 status code while removing %s/%s: %s - %s", repoName, pkg, resp.Status, string(b))
-				os.Exit(1)
-			}
-
-			fmt.Printf("%s removed.\n", pkg)
+		if err := client.RemovePackages(repoName, packagesToRemove...); err != nil {
+			fmt.Printf("Error while removing packages: %v", err)
+			os.Exit(1)
 		}
 	},
 }
