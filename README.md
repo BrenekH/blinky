@@ -2,7 +2,9 @@
 
 Simple, all in one Pacman repository hosting server software.
 
-<!-- TODO: Insert badges here -->
+<!-- TODO: Insert more badges here -->
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/BrenekH/blinky)
+[![Go Report Card](https://goreportcard.com/badge/github.com/BrenekH/blinky)](https://goreportcard.com/report/github.com/BrenekH/blinky)
 
 ## Conventions
 
