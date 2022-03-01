@@ -7,7 +7,8 @@ WORKDIR /go/src/blinky
 
 COPY go.mod ./go.mod
 COPY go.sum ./go.sum
-RUN go mod download
+# CGO must also be disabled while downloading so BadgerDB doesn't download CGO libs.
+RUN CGO_ENABLED=0 go mod download
 
 COPY . .
 
