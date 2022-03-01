@@ -12,10 +12,38 @@ In order to keep track of which one is being talked about, the server will be re
 Likewise, the CLI tool will be referred to as the CLI, or as simply `blinky`.
 
 ## Installation
-<!-- TODO -->
+
+### Source
+
+To install the Blinky components from source, the [Go compiler](https://go.dev/dl) needs to be installed.
+
+#### Server
+
+`go install github.com/BrenekH/blinky/cmd/blinkyd@latest`
+
+#### CLI
+
+`go install github.com/BrenekH/blinky/cmd/blinky@latest`
+
+<!-- ?Perhaps talk about installing shell completions? -->
+
+### Package Managers
+
+Currently, Blinky is not available in any package managers.
 
 ## Usage
 <!-- TODO -->
+
+### Server
+
+<!-- Repo file setup -->
+<!-- Env var/command line -->
+
+### CLI
+
+<!-- Basic usage -->
+
+More detailed usage instructions can be found by running `blinky help`.
 
 ## Security
 
@@ -51,4 +79,4 @@ The American versions of these names are Inky, Blinky, Pinky, and Clyde and beca
 
 ## License
 
-Blinky is licensed under the GNU General Public License Version 3, a copy of which can be found in the [LICENSE](LICENSE) file.
+Blinky is licensed under the GNU General Public License version 3, a copy of which can be found in the [LICENSE](LICENSE) file.
