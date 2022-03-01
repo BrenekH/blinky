@@ -116,7 +116,7 @@ func (b *BlinkyClient) UploadPackage(repo, packageName, packageFileName string, 
 		return fmt.Errorf("UploadPackage create request: %w", err)
 	}
 
-	request.Header.Add("Authorization", b.Password) // TODO: Swap out for basic auth using both username and password
+	request.SetBasicAuth(b.Username, b.Password)
 	request.Header.Add("Content-Type", writer.FormDataContentType())
 
 	resp, err := http.DefaultClient.Do(request)
@@ -157,7 +157,7 @@ func (b *BlinkyClient) RemovePackage(repo string, packageName string) error {
 		return fmt.Errorf("RemovePackage create request: %w", err)
 	}
 
-	r.Header.Add("Authorization", b.Password) // TODO: Swap out for basic auth using both username and password
+	r.SetBasicAuth(b.Username, b.Password)
 
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
