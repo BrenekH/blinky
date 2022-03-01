@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 )
 
 func New(url, username, password string) BlinkyClient {
@@ -46,7 +47,7 @@ func (b *BlinkyClient) UploadPackageFile(repo, packageFilepath string) error {
 	}
 	defer pkgFile.Close()
 
-	sigFile, err := os.Open(packageFilepath)
+	sigFile, err := os.Open(packageFilepath + ".sig")
 	if err != nil {
 		sigFile = nil
 	} else {
@@ -54,7 +55,13 @@ func (b *BlinkyClient) UploadPackageFile(repo, packageFilepath string) error {
 		defer sigFile.Close()
 	}
 
-	err = b.UploadPackage(repo, packageFilepath, pkgFile, sigFile)
+	// Identify the package name from the file we are going to upload
+	pkgName, err := readPkgName(packageFilepath)
+	if err != nil {
+		return fmt.Errorf("UploadPackageFile read package name: %w", err)
+	}
+
+	err = b.UploadPackage(repo, pkgName, packageFilepath, pkgFile, sigFile)
 	if err != nil {
 		return fmt.Errorf("UploadPackageFile upload package: %w", err)
 	}
@@ -65,42 +72,46 @@ func (b *BlinkyClient) UploadPackageFile(repo, packageFilepath string) error {
 // UploadPackage uploads a package to a repository on a Blinky server. packageFile is required to be non-nil,
 // but if there is no signature file to upload, signatureFile may be nil. packageFileName is used to name the
 // file on the remote server.
-func (b *BlinkyClient) UploadPackage(repo, packageFileName string, packageFile, signatureFile io.Reader) error {
+func (b *BlinkyClient) UploadPackage(repo, packageName, packageFileName string, packageFile, signatureFile io.Reader) error {
 	if packageFile == nil {
 		return errors.New("packageFile must not be nil")
 	}
 
 	r, w := io.Pipe()
-	defer w.Close()
 	writer := multipart.NewWriter(w)
-	defer writer.Close()
 
-	part, err := writer.CreateFormFile("package", filepath.Base(packageFileName))
-	if err != nil {
-		return fmt.Errorf("UploadPackage create package form file: %w", err)
-	}
+	go func() {
+		defer w.Close()
+		defer writer.Close()
 
-	_, err = io.Copy(part, packageFile)
-	if err != nil {
-		return fmt.Errorf("UploadPackage copy package file: %w", err)
-	}
-
-	if signatureFile != nil {
-		part, err := writer.CreateFormFile("signature", filepath.Base(packageFileName)+".sig")
+		pkgFormFile, err := writer.CreateFormFile("package", filepath.Base(packageFileName))
 		if err != nil {
-			return fmt.Errorf("UploadPackage create signature form file: %w", err)
+			fmt.Printf("UploadPackage create package form file: %v\n", err)
+			return
 		}
 
-		_, err = io.Copy(part, signatureFile)
+		_, err = io.Copy(pkgFormFile, packageFile)
 		if err != nil {
-			return fmt.Errorf("UploadPackage copy signature file: %w", err)
+			fmt.Printf("UploadPackage copy package file: %v\n", err)
+			return
 		}
-	}
 
-	// TODO: Decompress passed package file to identify the package name to be sent through the API
-	pkgName := "replace_me"
+		if !isNil(signatureFile) {
+			sigFormFile, err := writer.CreateFormFile("signature", filepath.Base(packageFileName)+".sig")
+			if err != nil {
+				fmt.Printf("UploadPackage create signature form file: %v\n", err)
+				return
+			}
 
-	request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/api/unstable/%s/package/%s", b.URL, repo, pkgName), r)
+			_, err = io.Copy(sigFormFile, signatureFile)
+			if err != nil {
+				fmt.Printf("UploadPackage copy signature file: %v\n", err)
+				return
+			}
+		}
+	}()
+
+	request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/api/unstable/%s/package/%s", b.URL, repo, packageName), r)
 	if err != nil {
 		return fmt.Errorf("UploadPackage create request: %w", err)
 	}
@@ -122,7 +133,7 @@ func (b *BlinkyClient) UploadPackage(repo, packageFileName string, packageFile, 
 
 		// TODO: Translate status code into specific Go errors
 
-		return fmt.Errorf("received a non-200 status code while uploading %s/%s: %s - %s", repo, pkgName, resp.Status, string(b))
+		return fmt.Errorf("received a non-200 status code while uploading %s/%s: %s - %s", repo, packageName, resp.Status, string(b))
 	}
 
 	return nil
@@ -166,4 +177,9 @@ func (b *BlinkyClient) RemovePackage(repo string, packageName string) error {
 	}
 
 	return nil
+}
+
+func isNil(a interface{}) bool {
+	defer func() { recover() }()
+	return a == nil || reflect.ValueOf(a).IsNil()
 }
