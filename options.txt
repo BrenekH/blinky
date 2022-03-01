@@ -1,8 +1,0 @@
-Purpose - (CLI) [ENV VAR]
------------------------------------------
-* Repository paths        - (--repo-path, -r)  [BLINKY_REPO_PATH]
-* Require signed packages - (--no-signed-pkgs) [BLINKY_SIGNED_PKGS]
-* Signing key file        - (--signing-key)    [BLINKY_SIGNING_KEY]
-* Config directory        - (--config-dir)     [BLINKY_CONFIG_DIR]
-* GnuPG directory         - (--gpg-dir)        [BLINKY_GPG_DIR]
-* Port                    - (--http-port, -p)  [BLINKY_PORT]
