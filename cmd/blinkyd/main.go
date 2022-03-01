@@ -23,8 +23,6 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("Configuration: %+v\n", viper.AllSettings())
-
 	repoPath := viper.GetString("RepoPath")
 	dbPath := viper.GetString("ConfigDir") + "/kv-db"
 	requireSignedPkgs := viper.GetBool("RequireSignedPkgs")
