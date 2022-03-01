@@ -19,7 +19,7 @@ on a Blinky server. If the --server flag is not provided,
 the default server will be used.
 
 The user may override the saved username and password with the
---username and --password flags. remove will also prompot for a
+--username and --password flags. remove will also prompt for a
 password if --password is not used and --ask-pass is passed.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		server := viper.GetString("server")
