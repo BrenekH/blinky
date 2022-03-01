@@ -13,7 +13,7 @@ import (
 	"github.com/BrenekH/blinky/apiunstable"
 	"github.com/BrenekH/blinky/cmd/blinkyd/viperutils"
 	"github.com/BrenekH/blinky/httpbasicauth"
-	"github.com/BrenekH/blinky/jsonds"
+	"github.com/BrenekH/blinky/keyvaluestore"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 )
@@ -26,7 +26,7 @@ func main() {
 	fmt.Printf("Configuration: %+v\n", viper.AllSettings())
 
 	repoPath := viper.GetString("RepoPath")
-	jsonDBPath := viper.GetString("ConfigDir") + "/packageAssociations.json"
+	dbPath := viper.GetString("ConfigDir") + "/kv-db"
 	requireSignedPkgs := viper.GetBool("RequireSignedPkgs")
 	gpgDir := viper.GetString("GPGDir")
 	signingKey := viper.GetString("SigningKeyFile")
@@ -64,7 +64,7 @@ func main() {
 		}
 	}
 
-	registerHTTPHandlers(repoPaths, jsonDBPath, gpgDir, apiUname, apiPasswd, requireSignedPkgs, signDB)
+	registerHTTPHandlers(repoPaths, dbPath, gpgDir, apiUname, apiPasswd, requireSignedPkgs, signDB)
 
 	fmt.Printf("Blinky is now listening for connections on port %s\n", httpPort)
 	http.ListenAndServe(fmt.Sprintf(":%s", httpPort), nil)
@@ -77,13 +77,13 @@ func main() {
 	}
 }
 
-func registerHTTPHandlers(repoPaths []string, jsonDBPath, gpgDir, apiUname, apiPasswd string, requireSignedPkgs, signDB bool) {
+func registerHTTPHandlers(repoPaths []string, dbPath, gpgDir, apiUname, apiPasswd string, requireSignedPkgs, signDB bool) {
 	rootRouter := mux.NewRouter()
 
 	// The PathPrefix value and base string must be the same so that the file server can properly serve the files.
 	registerRepoPaths(rootRouter.PathPrefix("/repo").Subrouter(), "/repo", repoPaths)
 
-	ds, err := jsonds.New(jsonDBPath)
+	ds, err := keyvaluestore.New(dbPath)
 	if err != nil {
 		panic(err)
 	}
