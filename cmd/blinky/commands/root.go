@@ -9,7 +9,7 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "blinky",
-	Short: "Manage packages in a Blinky repository system.",
+	Short: "Manage packages in a Blinky repository system",
 	Long: `blinky is a CLI used for uploading and removing packages
 from a Blinky Pacman repository.`,
 }

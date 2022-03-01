@@ -13,7 +13,7 @@ import (
 // removeCmd represents the remove command
 var removeCmd = &cobra.Command{
 	Use:   "remove repo_name packages...",
-	Short: "Remove packages from a Blinky server.",
+	Short: "Remove packages from a Blinky server",
 	Long: `Remove multiple packages from a pacman repository hosted
 on a Blinky server. If the --server flag is not provided,
 the default server will be used.

@@ -13,7 +13,7 @@ import (
 // uploadCmd represents the upload command
 var uploadCmd = &cobra.Command{
 	Use:   "upload repo_name package_files...",
-	Short: "Upload packages to a Blinky server.",
+	Short: "Upload packages to a Blinky server",
 	Long: `Upload multiple packages to a pacman repository hosted
 on a Blinky server. If the --server flag is not provided,
 the default server will be used.

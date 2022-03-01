@@ -13,8 +13,8 @@ import (
 // loginCmd represents the login command
 var loginCmd = &cobra.Command{
 	Use:   "login server_url",
-	Short: "Check and save the login information for a Blinky server.",
-	Long: `Login to a blinky server and optionally set it as the default server
+	Short: "Check and save the login information for a Blinky server",
+	Long: `Login to a Blinky server and optionally set it as the default server
 used by upload and remove.
 
 A user may choose to pass login details using
