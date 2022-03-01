@@ -15,7 +15,7 @@ func New(dbDirPath string) (BadgerAdapter, error) {
 	return BadgerAdapter{db: db}, nil
 }
 
-type BadgerAdapter struct {
+type BadgerAdapter struct { // implements: github.com/BrenekH/blinky.PackageNameToFileProvider
 	db *badger.DB
 }
 
