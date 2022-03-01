@@ -81,7 +81,7 @@ func SetupEnvVars() {
 }
 
 func SetupFlags() {
-	pflag.StringP("repo-path", "r", "", "--repo-path, -r <paths seperated with colons>")
+	pflag.StringP("repo-path", "r", "", "--repo-path, -r <paths separated with colons>")
 
 	pflag.Bool("no-signed-pkgs", true, "--no-signed-pkgs")
 	pflag.Lookup("no-signed-pkgs").NoOptDefVal = "false"
