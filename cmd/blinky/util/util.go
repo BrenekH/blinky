@@ -105,8 +105,8 @@ func Input(prompt string) string {
 	return ""
 }
 
-// SecureInput mimics Python's input function, which outputs a prompt and
-// takes bytes from stdin until a newline and returns a string.
+// SecureInput requests takes user input, but none of characters
+// typed appear in the terminal window.
 func SecureInput(prompt string) string {
 	fmt.Print(prompt)
 
