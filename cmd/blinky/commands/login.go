@@ -12,9 +12,14 @@ import (
 
 // loginCmd represents the login command
 var loginCmd = &cobra.Command{
-	Use:   "login",
+	Use:   "login server_url",
 	Short: "Check and save the login information for a Blinky server.",
-	Long:  ``,
+	Long: `Login to a blinky server and optionally set it as the default server
+used by upload and remove.
+
+A user may choose to pass login details using
+the --username and --password flags. Any fields that are provided to login
+will be prompted for.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		setAsDefault := viper.GetBool("default")
 		username := viper.GetString("username")

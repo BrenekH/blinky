@@ -14,7 +14,13 @@ import (
 var removeCmd = &cobra.Command{
 	Use:   "remove repo_name packages...",
 	Short: "Remove packages from a Blinky server.",
-	Long:  ``,
+	Long: `Remove multiple packages from a pacman repository hosted
+on a Blinky server. If the --server flag is not provided,
+the default server will be used.
+
+The user may override the saved username and password with the
+--username and --password flags. remove will also prompot for a
+password if --password is not used and --ask-pass is passed.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		server := viper.GetString("server")
 		username := viper.GetString("username")
