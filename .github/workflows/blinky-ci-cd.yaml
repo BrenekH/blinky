@@ -91,7 +91,6 @@ jobs:
         uses: crazy-max/ghaction-docker-meta@v2
         with:
           images: |
-            brenekh/blinky
             ghcr.io/brenekh/blinky
           tags: |
             type=ref,event=branch
@@ -114,11 +113,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-blinky-buildx-
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      # - name: Login to DockerHub
+      #   uses: docker/login-action@v1
+      #   with:
+      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Login to GitHub
         uses: docker/login-action@v1
