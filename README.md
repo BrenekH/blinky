@@ -37,6 +37,9 @@ Currently, Blinky is not available in any package managers.
 ## Usage
 <!-- TODO -->
 
+The following usage instructions are just the basics of how to use Blinky.
+For a full run down, please visit the [Blinky wiki](https://github.com/BrenekH/blinky/wiki).
+
 ### Server
 
 <!-- Repo file setup -->
@@ -44,7 +47,32 @@ Currently, Blinky is not available in any package managers.
 
 ### CLI
 
-<!-- Basic usage -->
+`blinky` has 4 basic commands: `login`, `logout`, `upload`, and `remove`.
+
+`login` is used to save the login credentials for a server.
+
+`logout` removes the saved credentials for a server.
+
+`upload` uploads new/updated packages to a repository hosted on a server.
+
+`remove` deletes packages from a repository on a server.
+
+**Examples:**
+
+```text
+$ blinky login --default https://blinky.example.com
+Username: user
+Password:
+
+$ blinky upload custom_repo my_package.pkg.tar.zst
+...
+
+$ blinky remove custom_repo my_package
+...
+
+$ blinky logout https://blinky.example.com
+...
+```
 
 More detailed usage instructions can be found by running `blinky help`.
 
