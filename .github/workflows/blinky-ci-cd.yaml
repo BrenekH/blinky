@@ -215,6 +215,14 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
 
     steps:
+      - name: Set PREREL environment variable
+        env:
+          TAG: ${{ github.ref }}
+        run: echo "PREREL=$(if [[ $TAG =~ "alpha" ]] || [[ $TAG =~ "beta" ]] || [[ $TAG =~ "rc" ]]; then echo "true"; else echo "false"; fi;)" >> $GITHUB_ENV
+
+      - name: Sanitize github.ref
+        run: echo "TAG_USED=$(echo ${GITHUB_REF:10})" >> $GITHUB_ENV
+
       - name: Download build artifacts
         uses: actions/download-artifact@v2
         with:
@@ -222,8 +230,9 @@ jobs:
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
-        # TODO: Enable setting prerelease
         with:
+          name: Version ${{ env.TAG_USED }}
+          prerelease: ${{ env.PREREL }}
           draft: true
           generate_release_notes: true
           files: ${{ github.workspace }}/build-artifacts/*/*
