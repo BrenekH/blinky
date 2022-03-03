@@ -3,6 +3,7 @@ package commands
 import (
 	"os"
 
+	"github.com/BrenekH/blinky/vars"
 	"github.com/spf13/cobra"
 )
 
@@ -12,6 +13,7 @@ var rootCmd = &cobra.Command{
 	Short: "Manage packages in a Blinky repository system",
 	Long: `blinky is a CLI used for uploading and removing packages
 from a Blinky Pacman repository.`,
+	Version: vars.Version,
 }
 
 func init() {

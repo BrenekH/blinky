@@ -13,7 +13,7 @@ RUN CGO_ENABLED=0 go mod download
 COPY . .
 
 # Disable CGO so that we have a static binary and set the platform for multi-arch builds.
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o blinkyd cmd/blinkyd/main.go
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o blinkyd -ldflags="-s -w -X 'github.com/BrenekH/blinky/vars.Version=${LDFLAGS_VERSION}'" cmd/blinkyd/main.go
 
 # Run stage
 FROM archlinux

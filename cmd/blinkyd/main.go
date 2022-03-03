@@ -14,11 +14,21 @@ import (
 	"github.com/BrenekH/blinky/cmd/blinkyd/viperutils"
 	"github.com/BrenekH/blinky/httpbasicauth"
 	"github.com/BrenekH/blinky/keyvaluestore"
+	"github.com/BrenekH/blinky/vars"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 )
 
 func main() {
+	// Print out the version when requested
+	for _, v := range os.Args {
+		switch strings.ToLower(v) {
+		case "--version", "-v":
+			fmt.Printf("blinkyd version %s\n", vars.Version)
+			os.Exit(0)
+		}
+	}
+
 	if err := viperutils.Setup(); err != nil {
 		panic(err)
 	}
