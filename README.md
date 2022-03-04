@@ -3,6 +3,7 @@
 Simple, all in one Pacman repository hosting server software.
 
 <!-- TODO: Insert more badges here -->
+[![GitHub](https://img.shields.io/github/license/BrenekH/blinky)](https://github.com/BrenekH/blinky/blob/master/LICENSE)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/BrenekH/blinky)
 [![Go Report Card](https://goreportcard.com/badge/github.com/BrenekH/blinky)](https://goreportcard.com/report/github.com/BrenekH/blinky)
 [![Blinky CI/CD](https://github.com/BrenekH/blinky/actions/workflows/blinky-ci-cd.yaml/badge.svg)](https://github.com/BrenekH/blinky/actions/workflows/blinky-ci-cd.yaml)
