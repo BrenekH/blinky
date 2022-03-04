@@ -35,15 +35,38 @@ To install the Blinky components from source, the [Go compiler](https://go.dev/d
 Currently, Blinky is not available in any package managers.
 
 ## Usage
-<!-- TODO -->
 
 The following usage instructions are just the basics of how to use Blinky.
 For a full run down, please visit the [Blinky wiki](https://github.com/BrenekH/blinky/wiki).
 
 ### Server
 
-<!-- Repo file setup -->
-<!-- Env var/command line -->
+`blinkyd` supports 3 methods of configuration, command-line arguments, environment variables, and a TOML config file located at either `/etc/blinky/config.toml` or `$XDG_CONFIG_HOME/blinky/config.toml`.
+The names are the same across each method, but with differing capitalization and word separators.
+This document will only use command-line args, but a full table can be found in the [wiki](https://github.com/BrenekH/blinky/wiki).
+
+#### Setting up repository paths
+
+Blinky uses the same syntax as the Linux PATH variable to specify where the repository's files should be stored.
+The required folders will be created if they do not exist.
+The last element of the path is used as the name of the repo.
+For example, the following command will create 3 repos: `repo1`, `repo2`, and `repo3`.
+
+`blinkyd --repo-path "/mnt/storage1/repo1:/mnt/storage1/repo2:/opt/repo3"`
+
+#### Change the port
+
+Using `--http-port` the port Blinky uses for the HTTP server can be changed.
+
+#### Protecting the API
+
+A username and password can be set so that only those who know the username and password can manage packages.
+
+The username is set by using `--api-uname` and the password is set with `--api-passwd`.
+
+#### Getting help from the terminal
+
+Using `blinkyd --help` will output a usage text and exit the application.
 
 ### CLI
 
@@ -74,9 +97,9 @@ $ blinky logout https://blinky.example.com
 ...
 ```
 
-More detailed usage instructions can be found by running `blinky help`.
+More detailed usage instructions can be found by running `blinky --help`.
 
-## Security
+## Recommended Security Practices
 
 ### HTTPS
 
