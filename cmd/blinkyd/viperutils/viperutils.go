@@ -81,22 +81,22 @@ func SetupEnvVars() {
 }
 
 func SetupFlags() {
-	pflag.StringP("repo-path", "r", "", "--repo-path, -r <paths separated with colons>")
+	pflag.StringP("repo-path", "r", "", "Colon-separated paths to use as repositories")
 
-	pflag.Bool("no-signed-pkgs", true, "--no-signed-pkgs")
+	pflag.Bool("no-signed-pkgs", true, "Do not require that packages be uploaded with a signature")
 	pflag.Lookup("no-signed-pkgs").NoOptDefVal = "false"
 
-	pflag.String("signing-key", "", "--signing-key <filepath>")
+	pflag.String("signing-key", "", "Filepath of a GPG key to use to sign the Pacman database")
 
-	pflag.String("config-dir", "", "--config-dir <dir>")
+	pflag.String("config-dir", "", "Directory to store Blinky's runtime files")
 
-	pflag.String("gpg-dir", "", "--gpg-dir <dir>")
+	pflag.String("gpg-dir", "", "Specify a custom location to construct a GPG keyring")
 
-	pflag.StringP("http-port", "p", "", "--http-port, -p <port number>")
+	pflag.StringP("http-port", "p", "", "Select the port to host Blinky on")
 
-	pflag.String("api-uname", "", "--api-uname <username>")
+	pflag.String("api-uname", "", "The username to use to protect the API")
 
-	pflag.String("api-passwd", "", "--api-passwd <password>")
+	pflag.String("api-passwd", "", "The password to use to protect the API")
 
 	pflag.Parse()
 

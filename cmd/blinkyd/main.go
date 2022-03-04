@@ -29,6 +29,8 @@ func main() {
 		}
 	}
 
+	// TODO: Print out a custom help message that better explains blinkyd's usage
+
 	if err := viperutils.Setup(); err != nil {
 		panic(err)
 	}
