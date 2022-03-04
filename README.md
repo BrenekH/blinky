@@ -17,6 +17,25 @@ Likewise, the CLI tool will be referred to as the CLI, or as simply `blinky`.
 
 ## Installation
 
+### Docker
+
+**Docker Compose Example:**
+
+```yaml
+version: "2.4"
+services:
+  blinky:
+    image: ghcr.io/brenekh/blinky:master
+    environment:
+      - BLINKY_REPO_PATH=/repos/repo_name
+    volumes:
+      - ./config:/config:rw
+      - ./repos:/repos:rw
+    ports:
+      - 9000:9000
+    restart: unless-stopped
+```
+
 ### Source
 
 To install the Blinky components from source, the [Go compiler](https://go.dev/dl) needs to be installed.
