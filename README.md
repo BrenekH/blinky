@@ -7,7 +7,7 @@ Simple, all in one Pacman repository hosting server software.
 [![Go Report Card](https://goreportcard.com/badge/github.com/BrenekH/blinky)](https://goreportcard.com/report/github.com/BrenekH/blinky)
 [![Blinky CI/CD](https://github.com/BrenekH/blinky/actions/workflows/blinky-ci-cd.yaml/badge.svg)](https://github.com/BrenekH/blinky/actions/workflows/blinky-ci-cd.yaml)
 
-## Conventions
+## Document Conventions
 
 This Git repository contains both the Blinky server and the `blinky` CLI tool.
 In order to keep track of which one is being talked about, the server will be referred to as either Blinky, the server, or `blinkyd`, depending on the context.
