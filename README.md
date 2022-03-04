@@ -17,7 +17,7 @@ Likewise, the CLI tool will be referred to as the CLI, or as simply `blinky`.
 
 ## Installation
 
-### Docker
+### Docker (Server only)
 
 **Docker Compose Example:**
 
