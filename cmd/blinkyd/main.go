@@ -88,10 +88,7 @@ func main() {
 }
 
 func registerHTTPHandlers(repoPaths []string, dbPath, gpgDir, apiUname, apiPasswd string, requireSignedPkgs, signDB bool) {
-	rootRouter := mux.NewRouter()
-
-	// The PathPrefix value and base string must be the same so that the file server can properly serve the files.
-	registerRepoPaths(rootRouter.PathPrefix("/repo").Subrouter(), "/repo", repoPaths)
+	registerRepoPaths("/repo", repoPaths)
 
 	ds, err := keyvaluestore.New(dbPath)
 	if err != nil {
@@ -100,18 +97,18 @@ func registerHTTPHandlers(repoPaths []string, dbPath, gpgDir, apiUname, apiPassw
 
 	apiAuth := httpbasicauth.New(apiUname, apiPasswd)
 
+	apiRouter := mux.NewRouter()
 	apiUnstable := apiunstable.New(&ds, &apiAuth, correlateRepoNames(repoPaths), gpgDir, requireSignedPkgs, signDB)
-	apiUnstable.Register(rootRouter.PathPrefix("/api/unstable/").Subrouter())
+	apiUnstable.Register(apiRouter.PathPrefix("/api/unstable/").Subrouter())
 
-	http.Handle("/", rootRouter)
-
+	http.Handle("/api/unstable/", apiRouter)
 }
 
-func registerRepoPaths(router *mux.Router, base string, repoPaths []string) {
+func registerRepoPaths(base string, repoPaths []string) {
 	for _, path := range repoPaths {
 		repoName := filepath.Base(path)
 		repoNameSlashed := "/" + repoName + "/"
-		router.Handle(repoNameSlashed, http.StripPrefix(base+repoNameSlashed, http.FileServer(http.Dir(path))))
+		http.Handle(repoNameSlashed, http.StripPrefix(base+repoNameSlashed, http.FileServer(http.Dir(path))))
 	}
 }
 
