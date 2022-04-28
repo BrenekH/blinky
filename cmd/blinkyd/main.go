@@ -102,6 +102,8 @@ func registerHTTPHandlers(repoPaths []string, dbPath, gpgDir, apiUname, apiPassw
 	apiUnstable.Register(apiRouter.PathPrefix("/api/unstable/").Subrouter())
 
 	http.Handle("/api/unstable/", apiRouter)
+
+	http.Handle("/", http.HandlerFunc(indexPageHandler))
 }
 
 func registerRepoPaths(base string, repoPaths []string) {
@@ -120,4 +122,43 @@ func correlateRepoNames(repoPaths []string) map[string]string {
 	}
 
 	return m
+}
+
+func indexPageHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Add("Content-Type", "text/html")
+	w.Write([]byte(`<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Blinky - Pacman Repo Server</title>
+
+		<style>
+			body {
+				text-align: center;
+				font-family: Arial;
+			}
+
+			a:visited {
+				color: blue;
+			}
+		</style>
+	</head>
+	<body>
+		<h1 style="margin-bottom: 0.25rem;">Blinky</h1>
+		<p style="margin-top: 0.25rem;">Simple, all in one Pacman repository hosting server software.</p>
+		<hr>
+		<a href="https://github.com/BrenekH/blinky#README" target="_blank" rel="noopener noreferrer">GitHub Project Link</a>
+	</body>
+</html>`))
 }
