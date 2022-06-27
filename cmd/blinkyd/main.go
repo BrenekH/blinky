@@ -110,7 +110,7 @@ func registerRepoPaths(base string, repoPaths []string) {
 	for _, path := range repoPaths {
 		repoName := filepath.Base(path)
 		repoNameSlashed := "/" + repoName + "/"
-		http.Handle(repoNameSlashed, http.StripPrefix(base+repoNameSlashed, http.FileServer(http.Dir(path))))
+		http.Handle(base+repoNameSlashed, http.StripPrefix(base+repoNameSlashed, http.FileServer(http.Dir(path))))
 	}
 }
 
