@@ -110,8 +110,20 @@ func registerRepoPaths(base string, repoPaths []string) {
 	for _, path := range repoPaths {
 		repoName := filepath.Base(path)
 		repoNameSlashed := "/" + repoName + "/"
-		http.Handle(base+repoNameSlashed, http.StripPrefix(base+repoNameSlashed, http.FileServer(http.Dir(path))))
+		http.Handle(base+repoNameSlashed, logRequestMiddleware(http.StripPrefix(base+repoNameSlashed, http.FileServer(http.Dir(path)))))
 	}
+}
+
+// logRequestMiddleware wraps a http.Handler and logs the request path if
+// the environment variable BLINKY_LOG_LEVEL is set to 'debug'.
+func logRequestMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.ToLower(os.Getenv("BLINKY_LOG_LEVEL")) == "debug" {
+			log.Printf("method=%v path=%v\n", r.Method, r.URL.Path)
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func correlateRepoNames(repoPaths []string) map[string]string {
