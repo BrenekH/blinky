@@ -19,7 +19,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o blinkyd -ldf
 FROM archlinux
 
 ENV BLINKY_SIGNING_KEY=/sign-db.key \
-	BLINKY_CONFIG_DIR=/config \
+	BLINKY_DATA_DIR=/data \
 	BLINKY_GNUPG_DIR=/gnupg
 
 WORKDIR /usr/src/app

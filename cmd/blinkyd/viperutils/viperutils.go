@@ -49,8 +49,8 @@ func SetupDefaults() error {
 	// SigningKeyFile
 	viper.SetDefault("SigningKeyFile", "")
 
-	// ConfigDir
-	viper.SetDefault("ConfigDir", "/var/lib/blinky")
+	// DataDir
+	viper.SetDefault("DataDir", "/var/lib/blinky")
 
 	// GPGDir
 	viper.SetDefault("GPGDir", "/tmp/blinky/gnupg")
@@ -73,7 +73,7 @@ func SetupEnvVars() {
 	viper.BindEnv("RepoPath", "BLINKY_REPO_PATH")
 	viper.BindEnv("RequireSignedPkgs", "BLINKY_SIGNED_PKGS")
 	viper.BindEnv("SigningKeyFile", "BLINKY_SIGNING_KEY")
-	viper.BindEnv("ConfigDir", "BLINKY_CONFIG_DIR")
+	viper.BindEnv("DataDir", "BLINKY_DATA_DIR")
 	viper.BindEnv("GPGDir", "BLINKY_GPG_DIR")
 	viper.BindEnv("HTTPPort", "BLINKY_PORT")
 	viper.BindEnv("APIUsername", "BLINKY_API_UNAME")
@@ -88,7 +88,7 @@ func SetupFlags() {
 
 	pflag.String("signing-key", "", "Filepath of a GPG key to use to sign the Pacman database")
 
-	pflag.String("config-dir", "", "Directory to store Blinky's runtime files")
+	pflag.String("data-dir", "", "Directory to store Blinky's runtime files")
 
 	pflag.String("gpg-dir", "", "Specify a custom location to construct a GPG keyring")
 
@@ -103,7 +103,7 @@ func SetupFlags() {
 	viper.BindPFlag("RepoPath", pflag.Lookup("repo-path"))
 	viper.BindPFlag("RequireSignedPkgs", pflag.Lookup("no-signed-pkgs"))
 	viper.BindPFlag("SigningKeyFile", pflag.Lookup("signing-key"))
-	viper.BindPFlag("ConfigDir", pflag.Lookup("config-dir"))
+	viper.BindPFlag("DataDir", pflag.Lookup("data-dir"))
 	viper.BindPFlag("GPGDir", pflag.Lookup("gpg-dir"))
 	viper.BindPFlag("HTTPPort", pflag.Lookup("http-port"))
 	viper.BindPFlag("APIUsername", pflag.Lookup("api-uname"))

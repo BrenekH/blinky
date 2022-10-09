@@ -36,7 +36,7 @@ func main() {
 	}
 
 	repoPath := viper.GetString("RepoPath")
-	dbPath := viper.GetString("ConfigDir") + "/kv-db"
+	dbPath := viper.GetString("DataDir") + "/kv-db"
 	requireSignedPkgs := viper.GetBool("RequireSignedPkgs")
 	gpgDir := viper.GetString("GPGDir")
 	signingKey := viper.GetString("SigningKeyFile")

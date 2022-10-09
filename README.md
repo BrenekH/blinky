@@ -29,7 +29,7 @@ services:
     environment:
       - BLINKY_REPO_PATH=/repos/repo_name
     volumes:
-      - ./config:/config:rw
+      - ./data:/data:rw
       - ./repos:/repos:rw
     ports:
       - 9000:9000
