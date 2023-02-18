@@ -74,7 +74,7 @@ jobs:
         run: go build -o blinkyd-${{ env.COMP_GOOS }}-${{ env.COMP_GOARCH }}${{ env.EXEC_SUFFIX }} -ldflags="-s -w -X 'github.com/BrenekH/blinky/vars.Version=${{ env.LDFLAGS_VERSION }}'" cmd/blinkyd/main.go
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: blinkyd-${{ env.COMP_GOOS }}-${{ env.COMP_GOARCH }}${{ env.EXEC_SUFFIX }}
           path: ${{ github.workspace }}/blinkyd-${{ env.COMP_GOOS }}-${{ env.COMP_GOARCH }}${{ env.EXEC_SUFFIX }}
