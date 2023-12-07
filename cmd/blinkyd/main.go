@@ -44,6 +44,8 @@ func main() {
 	httpPort := viper.GetString("HTTPPort")
 	apiUname := viper.GetString("APIUsername")
 	apiPasswd := viper.GetString("APIPassword")
+	var repoArches []string
+	viper.UnmarshalKey("RepoArch", &repoArches)
 
 	os.RemoveAll(gpgDir) // We don't care if this fails because of a missing dir, and if it's something else, we'll find out soon.
 
@@ -98,6 +100,7 @@ func main() {
 }
 
 func validateRepos(repoPaths []string, signDB bool, gpgDir string) {
+	// TODO: Handle multiple architectures
 	for _, repoPath := range repoPaths {
 		if err := os.MkdirAll(repoPath+"/x86_64", 0777); err != nil {
 			log.Printf("WARNING: Unable to create %s because of the following error: %v", repoPath+"/x86_64", err)

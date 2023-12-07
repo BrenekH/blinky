@@ -64,6 +64,9 @@ func SetupDefaults() error {
 	// APIPassword
 	viper.SetDefault("APIPassword", "")
 
+	// RepoArch
+	viper.SetDefault("RepoArch", "x86_64")
+
 	return nil
 }
 
@@ -78,6 +81,7 @@ func SetupEnvVars() {
 	viper.BindEnv("HTTPPort", "BLINKY_PORT")
 	viper.BindEnv("APIUsername", "BLINKY_API_UNAME")
 	viper.BindEnv("APIPassword", "BLINKY_API_PASSWD")
+	viper.BindEnv("RepoArch", "BLINKY_REPO_ARCH")
 }
 
 func SetupFlags() {
@@ -98,6 +102,8 @@ func SetupFlags() {
 
 	pflag.String("api-passwd", "", "The password to use to protect the API")
 
+	pflag.String("repo-arch", "", "Comma-separated list of architectures to support on the repos");
+
 	pflag.Parse()
 
 	viper.BindPFlag("RepoPath", pflag.Lookup("repo-path"))
@@ -108,4 +114,5 @@ func SetupFlags() {
 	viper.BindPFlag("HTTPPort", pflag.Lookup("http-port"))
 	viper.BindPFlag("APIUsername", pflag.Lookup("api-uname"))
 	viper.BindPFlag("APIPassword", pflag.Lookup("api-passwd"))
+	viper.BindPFlag("RepoArch", pflag.Lookup("repo-arch"))
 }
