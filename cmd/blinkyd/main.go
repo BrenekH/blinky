@@ -14,6 +14,7 @@ import (
 	"github.com/BrenekH/blinky/cmd/blinkyd/viperutils"
 	"github.com/BrenekH/blinky/httpbasicauth"
 	"github.com/BrenekH/blinky/keyvaluestore"
+	"github.com/BrenekH/blinky/pacman"
 	"github.com/BrenekH/blinky/vars"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
@@ -68,24 +69,7 @@ func main() {
 
 	repoPaths := strings.Split(repoPath, ":")
 
-	for _, repoPath := range repoPaths {
-		if err := os.MkdirAll(repoPath+"/x86_64", 0777); err != nil {
-			log.Printf("WARNING: Unable to create %s because of the following error: %v", repoPath+"/x86_64", err)
-		}
-
-		// Build and run repo-add command, including the --sign arg if requested
-		repoAddArgs := []string{"-q", "-R", "--nocolor"}
-		if signDB {
-			repoAddArgs = append(repoAddArgs, "--sign")
-		}
-		repoAddArgs = append(repoAddArgs, repoPath+"/x86_64/"+filepath.Base(repoPath)+".db.tar.gz")
-
-		cmd := exec.Command("repo-add", repoAddArgs...)
-		cmd.Env = append(cmd.Env, fmt.Sprintf("GNUPGHOME=%s", gpgDir))
-		if out, err := cmd.CombinedOutput(); err != nil {
-			log.Printf("WARNING: Unable to create repository database because of following error: could not run %s, received %s: %v", cmd.String(), string(out), err)
-		}
-	}
+	validateRepos(repoPaths, signDB, gpgDir)
 
 	registerHTTPHandlers(repoPaths, dbPath, gpgDir, apiUname, apiPasswd, requireSignedPkgs, signDB)
 
@@ -96,6 +80,18 @@ func main() {
 	if signDB {
 		if err := os.RemoveAll(gpgDir); err != nil {
 			panic(err)
+		}
+	}
+}
+
+func validateRepos(repoPaths []string, signDB bool, gpgDir string) {
+	for _, repoPath := range repoPaths {
+		if err := os.MkdirAll(repoPath+"/x86_64", 0777); err != nil {
+			log.Printf("WARNING: Unable to create %s because of the following error: %v", repoPath+"/x86_64", err)
+		}
+
+		if err := pacman.RepoAdd(repoPath+"/x86_64/"+filepath.Base(repoPath)+".db.tar.gz", "", signDB, &gpgDir); err != nil {
+			log.Printf("WARNING: Unable to create repository database because of following error: %s", err)
 		}
 	}
 }

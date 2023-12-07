@@ -7,10 +7,10 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/BrenekH/blinky"
+	"github.com/BrenekH/blinky/pacman"
 	"github.com/gorilla/mux"
 )
 
@@ -82,17 +82,8 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 	// until the request is known to have a .sig file.
 	saveMultipartFile(formPkgFile, formPkgHeader, a.repos[targetRepo])
 
-	// Build and run repo-add command, including the --sign arg if requested
-	args := []string{"-q", "-R", "--nocolor"}
-	if a.useSignedDB {
-		args = append(args, "--sign")
-	}
-	args = append(args, a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/x86_64/"+formPkgHeader.Filename)
-
-	cmd := exec.Command("repo-add", args...)
-	cmd.Env = append(cmd.Env, fmt.Sprintf("GNUPGHOME=%s", a.gnupgDir))
-	if out, err := cmd.CombinedOutput(); err != nil {
-		log.Printf("ERROR running %s: %s", cmd.String(), string(out))
+	if err = pacman.RepoAdd(a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/x86_64/"+formPkgHeader.Filename, a.useSignedDB, &a.gnupgDir); err != nil {
+		log.Printf("%s", err)
 		http.Error(w, "Failed to add package to the database. Check the server logs for more information.", http.StatusInternalServerError)
 		return
 	}
@@ -118,18 +109,8 @@ func (a *API) deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Build and run repo-remove command, including the --sign arg if requested
-	args := []string{"-q", "--nocolor"}
-	if a.useSignedDB {
-		args = append(args, "--sign")
-	}
-	args = append(args, a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", targetPkgName)
-
-	cmd := exec.Command("repo-remove", args...)
-	cmd.Env = append(cmd.Env, fmt.Sprintf("GNUPGHOME=%s", a.gnupgDir))
-
-	if out, err := cmd.CombinedOutput(); err != nil {
-		log.Printf("ERROR running %s: %s", cmd.String(), string(out))
+	if err := pacman.RepoRemove(a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", targetPkgName, a.useSignedDB, &a.gnupgDir); err != nil {
+		log.Printf("%s", err)
 		http.Error(w, "Failed to remove package from the database. Check the server logs for more information.", http.StatusInternalServerError)
 		return
 	}
