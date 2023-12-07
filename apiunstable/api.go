@@ -74,13 +74,13 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 		// Save the signature file, ensuring that it gets saved using the correct format no matter the filename sent.
 		temp := formPkgHeader.Filename
 		formPkgHeader.Filename = temp + ".sig"
-		saveMultipartFile(formSigFile, formPkgHeader, a.repos[targetRepo])
+		saveMultipartFile(formSigFile, formPkgHeader, a.repos[targetRepo]+"/x86_64")
 		formPkgHeader.Filename = temp
 	}
 
 	// This is after the signature file so that if the server requires a signed package, the file doesn't get copied
-	// until the request is known to have a .sig file.
-	saveMultipartFile(formPkgFile, formPkgHeader, a.repos[targetRepo])
+	// until the request is known to have a .sig file. This avoids unnecessary downloading.
+	saveMultipartFile(formPkgFile, formPkgHeader, a.repos[targetRepo]+"/x86_64")
 
 	if err = pacman.RepoAdd(a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/x86_64/"+formPkgHeader.Filename, a.useSignedDB, &a.gnupgDir); err != nil {
 		log.Printf("%s", err)
@@ -154,8 +154,8 @@ func (a *API) isValidRepo(r string) bool {
 	return false
 }
 
-func saveMultipartFile(mFile multipart.File, header *multipart.FileHeader, repoPath string) error {
-	dest := repoPath + "/x86_64/" + filepath.Base(filepath.Clean(header.Filename))
+func saveMultipartFile(mFile multipart.File, header *multipart.FileHeader, targetDir string) error {
+	dest := targetDir + filepath.Base(filepath.Clean(header.Filename))
 
 	dst, err := os.Create(dest)
 	if err != nil {
