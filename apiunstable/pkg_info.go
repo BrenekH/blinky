@@ -39,6 +39,8 @@ func pkgInfoParseFile(filepath string) (pkgInfo, error) {
 		p.Name = s[1]
 	}
 
+	// TODO: Parse for architecture information
+
 	return p, nil
 }
 
