@@ -55,12 +55,6 @@ func (b *BlinkyClient) UploadPackageFile(repo, packageFilepath string) error {
 		defer sigFile.Close()
 	}
 
-	// Identify the package name from the file we are going to upload
-	// pkgName, err := readPkgName(packageFilepath)
-	// if err != nil {
-	// 	return fmt.Errorf("UploadPackageFile read package name: %w", err)
-	// }
-
 	err = b.UploadPackage(repo, packageFilepath, pkgFile, sigFile)
 	if err != nil {
 		return fmt.Errorf("UploadPackageFile upload package: %w", err)
@@ -133,7 +127,7 @@ func (b *BlinkyClient) UploadPackage(repo, packageFileName string, packageFile, 
 
 		// TODO: Translate status code into specific Go errors
 
-		return fmt.Errorf("received a non-200 status code while uploading to %s: %s - %s", repo, resp.Status, string(b))
+		return fmt.Errorf("received a %s status code while uploading %s to %s: %s", resp.Status, packageFileName, repo, string(b))
 	}
 
 	return nil
