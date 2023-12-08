@@ -56,12 +56,12 @@ func (b *BlinkyClient) UploadPackageFile(repo, packageFilepath string) error {
 	}
 
 	// Identify the package name from the file we are going to upload
-	pkgName, err := readPkgName(packageFilepath)
-	if err != nil {
-		return fmt.Errorf("UploadPackageFile read package name: %w", err)
-	}
+	// pkgName, err := readPkgName(packageFilepath)
+	// if err != nil {
+	// 	return fmt.Errorf("UploadPackageFile read package name: %w", err)
+	// }
 
-	err = b.UploadPackage(repo, pkgName, packageFilepath, pkgFile, sigFile)
+	err = b.UploadPackage(repo, packageFilepath, pkgFile, sigFile)
 	if err != nil {
 		return fmt.Errorf("UploadPackageFile upload package: %w", err)
 	}
@@ -72,7 +72,7 @@ func (b *BlinkyClient) UploadPackageFile(repo, packageFilepath string) error {
 // UploadPackage uploads a package to a repository on a Blinky server. packageFile is required to be non-nil,
 // but if there is no signature file to upload, signatureFile may be nil. packageFileName is used to name the
 // file on the remote server.
-func (b *BlinkyClient) UploadPackage(repo, packageName, packageFileName string, packageFile, signatureFile io.Reader) error {
+func (b *BlinkyClient) UploadPackage(repo, packageFileName string, packageFile, signatureFile io.Reader) error {
 	if packageFile == nil {
 		return errors.New("packageFile must not be nil")
 	}
@@ -111,7 +111,7 @@ func (b *BlinkyClient) UploadPackage(repo, packageName, packageFileName string, 
 		}
 	}()
 
-	request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/api/unstable/%s/package/%s", b.URL, repo, packageName), r)
+	request, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/api/unstable/%s/package", b.URL, repo), r)
 	if err != nil {
 		return fmt.Errorf("UploadPackage create request: %w", err)
 	}
@@ -133,7 +133,7 @@ func (b *BlinkyClient) UploadPackage(repo, packageName, packageFileName string, 
 
 		// TODO: Translate status code into specific Go errors
 
-		return fmt.Errorf("received a non-200 status code while uploading %s/%s: %s - %s", repo, packageName, resp.Status, string(b))
+		return fmt.Errorf("received a non-200 status code while uploading to %s: %s - %s", repo, resp.Status, string(b))
 	}
 
 	return nil
