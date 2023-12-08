@@ -7,10 +7,10 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/BrenekH/blinky"
+	"github.com/BrenekH/blinky/pacman"
 	"github.com/gorilla/mux"
 )
 
@@ -36,7 +36,7 @@ type API struct {
 
 // Register registers http handlers associated with the unstable API.
 func (a *API) Register(router *mux.Router) {
-	router.Handle("/{repo}/package/{package_name}", a.auth.CreateMiddleware(http.HandlerFunc(a.putRepoPkg))).Methods(http.MethodPut)
+	router.Handle("/{repo}/package", a.auth.CreateMiddleware(http.HandlerFunc(a.putRepoPkg))).Methods(http.MethodPut)
 	router.Handle("/{repo}/package/{package_name}", a.auth.CreateMiddleware(http.HandlerFunc(a.deleteRepoPkg))).Methods(http.MethodDelete)
 }
 
@@ -44,7 +44,6 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 	// Extract variables from URL
 	vars := mux.Vars(r)
 	targetRepo := vars["repo"]
-	targetPkgName := vars["package_name"]
 
 	if !a.isValidRepo(targetRepo) {
 		w.WriteHeader(http.StatusBadRequest)
@@ -74,32 +73,30 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 		// Save the signature file, ensuring that it gets saved using the correct format no matter the filename sent.
 		temp := formPkgHeader.Filename
 		formPkgHeader.Filename = temp + ".sig"
-		saveMultipartFile(formSigFile, formPkgHeader, a.repos[targetRepo])
+		saveMultipartFile(formSigFile, formPkgHeader, a.repos[targetRepo]+"/x86_64")
 		formPkgHeader.Filename = temp
 	}
 
 	// This is after the signature file so that if the server requires a signed package, the file doesn't get copied
-	// until the request is known to have a .sig file.
-	saveMultipartFile(formPkgFile, formPkgHeader, a.repos[targetRepo])
+	// until the request is known to have a .sig file. This avoids unnecessary downloading.
+	saveMultipartFile(formPkgFile, formPkgHeader, a.repos[targetRepo]+"/x86_64")
 
-	// Build and run repo-add command, including the --sign arg if requested
-	args := []string{"-q", "-R", "--nocolor"}
-	if a.useSignedDB {
-		args = append(args, "--sign")
+	packageInfo, err := pkgInfoParseFile(a.repos[targetRepo] + "/x86_64/" + formPkgHeader.Filename)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Could not read package info. Check that the file provided is a valid Pacman package", http.StatusBadRequest)
+		return
 	}
-	args = append(args, a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/x86_64/"+formPkgHeader.Filename)
 
-	cmd := exec.Command("repo-add", args...)
-	cmd.Env = append(cmd.Env, fmt.Sprintf("GNUPGHOME=%s", a.gnupgDir))
-	if out, err := cmd.CombinedOutput(); err != nil {
-		log.Printf("ERROR running %s: %s", cmd.String(), string(out))
+	if err = pacman.RepoAdd(a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/x86_64/"+formPkgHeader.Filename, a.useSignedDB, &a.gnupgDir); err != nil {
+		log.Println(err)
 		http.Error(w, "Failed to add package to the database. Check the server logs for more information.", http.StatusInternalServerError)
 		return
 	}
 
-	if err := a.storage.StorePackageFile(fmt.Sprintf("%s/%s", targetRepo, targetPkgName), formPkgHeader.Filename); err != nil {
+	if err := a.storage.StorePackageFile(fmt.Sprintf("%s/%s", targetRepo, packageInfo.Name), formPkgHeader.Filename); err != nil {
 		log.Println(err)
-		http.Error(w, fmt.Sprintf("Got error while saving new Blinky db entry: %v", err), http.StatusInternalServerError)
+		http.Error(w, "Got error while saving new Blinky db entry. Check server logs for more information.", http.StatusInternalServerError)
 		return
 	}
 
@@ -118,18 +115,8 @@ func (a *API) deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Build and run repo-remove command, including the --sign arg if requested
-	args := []string{"-q", "--nocolor"}
-	if a.useSignedDB {
-		args = append(args, "--sign")
-	}
-	args = append(args, a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", targetPkgName)
-
-	cmd := exec.Command("repo-remove", args...)
-	cmd.Env = append(cmd.Env, fmt.Sprintf("GNUPGHOME=%s", a.gnupgDir))
-
-	if out, err := cmd.CombinedOutput(); err != nil {
-		log.Printf("ERROR running %s: %s", cmd.String(), string(out))
+	if err := pacman.RepoRemove(a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", targetPkgName, a.useSignedDB, &a.gnupgDir); err != nil {
+		log.Printf("%s", err)
 		http.Error(w, "Failed to remove package from the database. Check the server logs for more information.", http.StatusInternalServerError)
 		return
 	}
@@ -173,8 +160,8 @@ func (a *API) isValidRepo(r string) bool {
 	return false
 }
 
-func saveMultipartFile(mFile multipart.File, header *multipart.FileHeader, repoPath string) error {
-	dest := repoPath + "/x86_64/" + filepath.Base(filepath.Clean(header.Filename))
+func saveMultipartFile(mFile multipart.File, header *multipart.FileHeader, targetDir string) error {
+	dest := targetDir + filepath.Base(filepath.Clean(header.Filename))
 
 	dst, err := os.Create(dest)
 	if err != nil {
