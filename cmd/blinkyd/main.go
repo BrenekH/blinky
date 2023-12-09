@@ -100,7 +100,7 @@ func main() {
 }
 
 func validateRepos(repoPaths []string, signDB bool, gpgDir string) {
-	// TODO: Handle multiple architectures
+	// TODO: Handle multiple architectures and create tmp directory
 	for _, repoPath := range repoPaths {
 		if err := os.MkdirAll(repoPath+"/x86_64", 0777); err != nil {
 			log.Printf("WARNING: Unable to create %s because of the following error: %v", repoPath+"/x86_64", err)

@@ -73,20 +73,22 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 		// Save the signature file, ensuring that it gets saved using the correct format no matter the filename sent.
 		temp := formPkgHeader.Filename
 		formPkgHeader.Filename = temp + ".sig"
-		saveMultipartFile(formSigFile, formPkgHeader, a.repos[targetRepo]+"/x86_64")
+		saveMultipartFile(formSigFile, formPkgHeader, a.repos[targetRepo]+"/tmp")
 		formPkgHeader.Filename = temp
 	}
 
 	// This is after the signature file so that if the server requires a signed package, the file doesn't get copied
 	// until the request is known to have a .sig file. This avoids unnecessary downloading.
-	saveMultipartFile(formPkgFile, formPkgHeader, a.repos[targetRepo]+"/x86_64")
+	saveMultipartFile(formPkgFile, formPkgHeader, a.repos[targetRepo]+"/tmp")
 
-	packageInfo, err := pkgInfoParseFile(a.repos[targetRepo] + "/x86_64/" + formPkgHeader.Filename)
+	packageInfo, err := pkgInfoParseFile(a.repos[targetRepo] + "/tmp/" + formPkgHeader.Filename)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Could not read package info. Check that the file provided is a valid Pacman package", http.StatusBadRequest)
 		return
 	}
+
+	// TODO: Use packageInfo to determine where the package file should be placed (and which db to add it to)
 
 	if err = pacman.RepoAdd(a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/x86_64/"+formPkgHeader.Filename, a.useSignedDB, &a.gnupgDir); err != nil {
 		log.Println(err)
