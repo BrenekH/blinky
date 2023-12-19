@@ -14,10 +14,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func New(storageProvider blinky.PackageNameToFileProvider, authProvider blinky.Authenticator, foundRepos map[string]string, gnupgDir string, requireSignedPackages, useSignedDB bool) API {
+func New(storageProvider blinky.PackageNameToFileProvider, authProvider blinky.Authenticator, foundRepos map[string]string, repoArches []string, gnupgDir string, requireSignedPackages, useSignedDB bool) API {
 	return API{
 		gnupgDir:              gnupgDir,
 		repos:                 foundRepos,
+		repoArches:            repoArches,
 		useSignedDB:           useSignedDB,
 		auth:                  authProvider,
 		storage:               storageProvider,
@@ -29,6 +30,7 @@ type API struct {
 	storage               blinky.PackageNameToFileProvider
 	auth                  blinky.Authenticator
 	repos                 map[string]string // Map of repo name to repo path
+	repoArches            []string
 	requireSignedPackages bool
 	useSignedDB           bool
 	gnupgDir              string // The location to set GNUPGHOME to, when repo-add/repo-remove.

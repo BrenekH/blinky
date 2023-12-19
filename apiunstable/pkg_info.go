@@ -12,9 +12,11 @@ import (
 )
 
 var pkgnameRegex = regexp.MustCompile(`pkgname = (.*)`)
+var archRegex = regexp.MustCompile(`arch = (.*)`)
 
 type pkgInfo struct {
 	Name string
+	Arch string
 }
 
 func pkgInfoParseFile(filepath string) (pkgInfo, error) {
@@ -39,7 +41,11 @@ func pkgInfoParseFile(filepath string) (pkgInfo, error) {
 		p.Name = s[1]
 	}
 
-	// TODO: Parse for architecture information
+	if s := archRegex.FindStringSubmatch(pkgInfoStr); len(s) < 2 {
+		return pkgInfo{}, errors.New("pkg.ParseFile: parse .PKGINFO: could not find arch line")
+	} else {
+		p.Arch = s[1]
+	}
 
 	return p, nil
 }

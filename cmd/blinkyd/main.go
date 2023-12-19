@@ -86,7 +86,7 @@ func main() {
 
 	validateRepos(repoPaths, repoArches, signDB, gpgDir)
 
-	registerHTTPHandlers(repoPaths, dbPath, gpgDir, apiUname, apiPasswd, requireSignedPkgs, signDB)
+	registerHTTPHandlers(repoPaths, repoArches, dbPath, gpgDir, apiUname, apiPasswd, requireSignedPkgs, signDB)
 
 	fmt.Printf("Blinky is now listening for connections on port %s\n", httpPort)
 	http.ListenAndServe(fmt.Sprintf(":%s", httpPort), nil)
@@ -117,7 +117,7 @@ func validateRepos(repoPaths []string, repoArches []string, signDB bool, gpgDir 
 	}
 }
 
-func registerHTTPHandlers(repoPaths []string, dbPath, gpgDir, apiUname, apiPasswd string, requireSignedPkgs, signDB bool) {
+func registerHTTPHandlers(repoPaths, repoArches []string, dbPath, gpgDir, apiUname, apiPasswd string, requireSignedPkgs, signDB bool) {
 	registerRepoPaths("/repo", repoPaths)
 
 	ds, err := keyvaluestore.New(dbPath)
@@ -128,7 +128,7 @@ func registerHTTPHandlers(repoPaths []string, dbPath, gpgDir, apiUname, apiPassw
 	apiAuth := httpbasicauth.New(apiUname, apiPasswd)
 
 	apiRouter := mux.NewRouter()
-	apiUnstable := apiunstable.New(&ds, &apiAuth, correlateRepoNames(repoPaths), gpgDir, requireSignedPkgs, signDB)
+	apiUnstable := apiunstable.New(&ds, &apiAuth, correlateRepoNames(repoPaths), repoArches, gpgDir, requireSignedPkgs, signDB)
 	apiUnstable.Register(apiRouter.PathPrefix("/api/unstable/").Subrouter())
 
 	http.Handle("/api/unstable/", apiRouter)
