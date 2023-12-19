@@ -84,7 +84,7 @@ func main() {
 
 	repoPaths := strings.Split(repoPath, ":")
 
-	validateRepos(repoPaths, signDB, gpgDir)
+	validateRepos(repoPaths, repoArches, signDB, gpgDir)
 
 	registerHTTPHandlers(repoPaths, dbPath, gpgDir, apiUname, apiPasswd, requireSignedPkgs, signDB)
 
@@ -99,15 +99,20 @@ func main() {
 	}
 }
 
-func validateRepos(repoPaths []string, signDB bool, gpgDir string) {
-	// TODO: Handle multiple architectures and create tmp directory
+func validateRepos(repoPaths []string, repoArches []string, signDB bool, gpgDir string) {
 	for _, repoPath := range repoPaths {
-		if err := os.MkdirAll(repoPath+"/x86_64", 0777); err != nil {
-			log.Printf("WARNING: Unable to create %s because of the following error: %v", repoPath+"/x86_64", err)
+		if err := os.MkdirAll(repoPath+"/tmp", 0777); err != nil {
+			log.Printf("WARNING: Unable to create %s because of error: %v", repoPath+"/tmp", err)
 		}
 
-		if err := pacman.RepoAdd(repoPath+"/x86_64/"+filepath.Base(repoPath)+".db.tar.gz", "", signDB, &gpgDir); err != nil {
-			log.Printf("WARNING: Unable to create repository database because of following error: %s", err)
+		for _, repoArch := range repoArches {
+			if err := os.MkdirAll(repoPath+"/"+repoArch, 0777); err != nil {
+				log.Printf("WARNING: Unable to create %s because of the following error: %v", repoPath+"/"+repoArch, err)
+			}
+
+			if err := pacman.RepoAdd(repoPath+"/"+repoArch+"/"+filepath.Base(repoPath)+".db.tar.gz", "", signDB, &gpgDir); err != nil {
+				log.Printf("WARNING: Unable to create repository database because of following error: %s", err)
+			}
 		}
 	}
 }
