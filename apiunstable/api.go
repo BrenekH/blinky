@@ -90,9 +90,24 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Use packageInfo to determine where the package file should be placed (and which db to add it to)
+	var targetArch string
+	for _, arch := range a.repoArches {
+		if arch == packageInfo.Arch {
+			targetArch = arch
+		}
+	}
+	if targetArch == "" {
+		http.Error(w, "Provided package is for an architecture not supported by this server", http.StatusBadRequest)
+		return
+	}
 
-	if err = pacman.RepoAdd(a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/x86_64/"+formPkgHeader.Filename, a.useSignedDB, &a.gnupgDir); err != nil {
+	if err := os.Rename(a.repos[targetRepo]+"/tmp/"+formPkgHeader.Filename, a.repos[targetRepo]+"/"+targetArch+"/"+formPkgHeader.Filename); err != nil {
+		log.Println(err)
+		http.Error(w, "Failed to move package from temp directory. Check the server logs for more information.", http.StatusInternalServerError)
+		return
+	}
+
+	if err := pacman.RepoAdd(a.repos[targetRepo]+"/"+targetArch+"/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/"+targetArch+"/"+formPkgHeader.Filename, a.useSignedDB, &a.gnupgDir); err != nil {
 		log.Println(err)
 		http.Error(w, "Failed to add package to the database. Check the server logs for more information.", http.StatusInternalServerError)
 		return
