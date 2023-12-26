@@ -161,7 +161,8 @@ func (a *API) isValidRepo(r string) bool {
 }
 
 func saveMultipartFile(mFile multipart.File, header *multipart.FileHeader, targetDir string) error {
-	dest := targetDir + filepath.Base(filepath.Clean(header.Filename))
+	cleanTargetDir := filepath.Clean(targetDir)
+	dest := cleanTargetDir + "/" + filepath.Base(filepath.Clean(header.Filename))
 
 	dst, err := os.Create(dest)
 	if err != nil {
