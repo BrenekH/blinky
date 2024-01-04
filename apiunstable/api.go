@@ -90,6 +90,7 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: Handle "any" packages
 	var targetArch string
 	for _, arch := range a.repoArches {
 		if arch == packageInfo.Arch {
@@ -134,30 +135,33 @@ func (a *API) deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := pacman.RepoRemove(a.repos[targetRepo]+"/x86_64/"+targetRepo+".db.tar.gz", targetPkgName, a.useSignedDB, &a.gnupgDir); err != nil {
-		log.Printf("%s", err)
-		http.Error(w, "Failed to remove package from the database. Check the server logs for more information.", http.StatusInternalServerError)
-		return
-	}
+	// TODO: Handle "any" architectures
+	for _, arch := range a.repoArches {
+		if err := pacman.RepoRemove(a.repos[targetRepo]+"/"+arch+"/"+targetRepo+".db.tar.gz", targetPkgName, a.useSignedDB, &a.gnupgDir); err != nil {
+			log.Printf("%s", err)
+			http.Error(w, "Failed to remove package from the database. Check the server logs for more information.", http.StatusInternalServerError)
+			return
+		}
 
-	// Locate package file from Blinky database
-	pkgFile, err := a.storage.PackageFile(fmt.Sprintf("%s/%s", targetRepo, targetPkgName))
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Unable to find %s/%s in database.", targetRepo, targetPkgName), http.StatusInternalServerError)
-		return
-	}
+		// Locate package file from Blinky database
+		pkgFile, err := a.storage.PackageFile(fmt.Sprintf("%s/%s", targetRepo, targetPkgName))
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Unable to find %s/%s in database.", targetRepo, targetPkgName), http.StatusInternalServerError)
+			return
+		}
 
-	pkgFile = a.repos[targetRepo] + "/x86_64/" + pkgFile
+		pkgFile = a.repos[targetRepo] + "/" + arch + "/" + pkgFile
 
-	// Remove primary package file
-	if err := os.Remove(pkgFile); err != nil {
-		http.Error(w, fmt.Sprintf("Unable to remove %s because of error: %v", pkgFile, err), http.StatusInternalServerError)
-		return
-	}
+		// Remove primary package file
+		if err := os.Remove(pkgFile); err != nil {
+			http.Error(w, fmt.Sprintf("Unable to remove %s because of error: %v", pkgFile, err), http.StatusInternalServerError)
+			return
+		}
 
-	// Remove signature file
-	if err := os.Remove(pkgFile + ".sig"); err != nil {
-		log.Printf("Unable to remove %s because of error: %v\n", pkgFile+".sig", err)
+		// Remove signature file
+		if err := os.Remove(pkgFile + ".sig"); err != nil {
+			log.Printf("Unable to remove %s because of error: %v\n", pkgFile+".sig", err)
+		}
 	}
 
 	if err := a.storage.DeletePackageFileEntry(fmt.Sprintf("%s/%s", targetRepo, targetPkgName)); err != nil {
