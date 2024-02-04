@@ -59,8 +59,21 @@ func main() {
 			cmd := exec.Command("gpg", "--allow-secret-key-import", "--import", signingKey)
 			cmd.Env = append(cmd.Env, fmt.Sprintf("GNUPGHOME=%s", gpgDir))
 			if b, err := cmd.CombinedOutput(); err != nil {
-				log.Println(string(b))
-				panic(err)
+				errOut := string(b)
+
+				if strings.Contains(errOut, "Inappropriate ioctl") {
+					log.Println("failed to prompt for passphrase! Trying pinentry-mode: loopback...")
+
+					cmd := exec.Command("gpg", "--pinentry-mode", "loopback", "--allow-secret-key-import", "--import", signingKey)
+					cmd.Env = append(cmd.Env, fmt.Sprintf("GNUPGHOME=%s", gpgDir))
+					if b, err := cmd.CombinedOutput(); err != nil {
+						log.Println(string(b))
+						panic(err)
+					}
+				} else {
+					log.Println(errOut)
+					panic(err)
+				}
 			}
 		} else if errors.Is(err, os.ErrNotExist) {
 			log.Printf("WARNING: The signing key %s does not exist\n", signingKey)
