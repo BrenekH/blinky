@@ -90,7 +90,6 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Handle "any" packages
 	var targetArch string
 	for _, arch := range a.repoArches {
 		if arch == packageInfo.Arch {
@@ -102,22 +101,48 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// FIXME: Too verbose filepath
 	if err := os.Rename(a.repos[targetRepo]+"/tmp/"+formPkgHeader.Filename, a.repos[targetRepo]+"/"+targetArch+"/"+formPkgHeader.Filename); err != nil {
 		log.Println(err)
 		http.Error(w, "Failed to move package from temp directory. Check the server logs for more information.", http.StatusInternalServerError)
 		return
 	}
 
-	if err := pacman.RepoAdd(a.repos[targetRepo]+"/"+targetArch+"/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/"+targetArch+"/"+formPkgHeader.Filename, a.useSignedDB, &a.gnupgDir); err != nil {
-		log.Println(err)
-		http.Error(w, "Failed to add package to the database. Check the server logs for more information.", http.StatusInternalServerError)
-		return
-	}
+	if targetArch == "any" {
+		for _, arch := range a.repoArches {
+			// Make symlink for "any" packages
+			if err := os.Symlink(a.repos[targetRepo]+"/"+targetArch+"/"+formPkgHeader.Filename, a.repos[targetRepo]+"/"+arch+"/"+formPkgHeader.Filename); err != nil {
+				log.Println(err)
+				http.Error(w, "Failed to create symlink for package. Check the server logs for more information.", http.StatusInternalServerError)
+				return
+			}
 
-	if err := a.storage.StorePackageFile(fmt.Sprintf("%s/%s", targetRepo, packageInfo.Name), formPkgHeader.Filename); err != nil {
-		log.Println(err)
-		http.Error(w, "Got error while saving new Blinky db entry. Check server logs for more information.", http.StatusInternalServerError)
-		return
+			// Make symlink for signature file
+			if err := os.Symlink(a.repos[targetRepo]+"/"+targetArch+"/"+formPkgHeader.Filename+".sig", a.repos[targetRepo]+"/"+arch+"/"+formPkgHeader.Filename+".sig"); err != nil {
+				log.Println(err)
+				http.Error(w, "Failed to create symlink for signature file. Check the server logs for more information.", http.StatusInternalServerError)
+				return
+			}
+
+			// Run repo-add for each architecture
+			if err := pacman.RepoAdd(a.repos[targetRepo]+"/"+arch+"/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/"+arch+"/"+formPkgHeader.Filename, a.useSignedDB, &a.gnupgDir); err != nil {
+				log.Println(err)
+				http.Error(w, "Failed to add package to the database. Check the server logs for more information.", http.StatusInternalServerError)
+				return
+			}
+		}
+	} else {
+		if err := pacman.RepoAdd(a.repos[targetRepo]+"/"+targetArch+"/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/"+targetArch+"/"+formPkgHeader.Filename, a.useSignedDB, &a.gnupgDir); err != nil {
+			log.Println(err)
+			http.Error(w, "Failed to add package to the database. Check the server logs for more information.", http.StatusInternalServerError)
+			return
+		}
+
+		if err := a.storage.StorePackageFile(fmt.Sprintf("%s/%s", targetRepo, packageInfo.Name), formPkgHeader.Filename); err != nil {
+			log.Println(err)
+			http.Error(w, "Got error while saving new Blinky db entry. Check server logs for more information.", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
