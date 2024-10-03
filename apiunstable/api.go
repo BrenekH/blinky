@@ -110,22 +110,29 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 
 	if targetArch == "any" {
 		for _, arch := range a.repoArches {
+			if arch == "any" {
+				continue
+			}
+
+			anyDirPkgPath := a.repos[targetRepo] + "/any/" + formPkgHeader.Filename
+			archDirPkgPath := a.repos[targetRepo] + "/" + arch + "/" + formPkgHeader.Filename
+
 			// Make symlink for "any" packages
-			if err := os.Symlink(a.repos[targetRepo]+"/"+targetArch+"/"+formPkgHeader.Filename, a.repos[targetRepo]+"/"+arch+"/"+formPkgHeader.Filename); err != nil {
+			if err := os.Symlink(anyDirPkgPath, archDirPkgPath); err != nil {
 				log.Println(err)
 				http.Error(w, "Failed to create symlink for package. Check the server logs for more information.", http.StatusInternalServerError)
 				return
 			}
 
 			// Make symlink for signature file
-			if err := os.Symlink(a.repos[targetRepo]+"/"+targetArch+"/"+formPkgHeader.Filename+".sig", a.repos[targetRepo]+"/"+arch+"/"+formPkgHeader.Filename+".sig"); err != nil {
+			if err := os.Symlink(anyDirPkgPath+".sig", archDirPkgPath+".sig"); err != nil {
 				log.Println(err)
 				http.Error(w, "Failed to create symlink for signature file. Check the server logs for more information.", http.StatusInternalServerError)
 				return
 			}
 
 			// Run repo-add for each architecture
-			if err := pacman.RepoAdd(a.repos[targetRepo]+"/"+arch+"/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/"+arch+"/"+formPkgHeader.Filename, a.useSignedDB, &a.gnupgDir); err != nil {
+			if err := pacman.RepoAdd(a.repos[targetRepo]+"/"+arch+"/"+targetRepo+".db.tar.gz", archDirPkgPath, a.useSignedDB, &a.gnupgDir); err != nil {
 				log.Println(err)
 				http.Error(w, "Failed to add package to the database. Check the server logs for more information.", http.StatusInternalServerError)
 				return
@@ -137,12 +144,12 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to add package to the database. Check the server logs for more information.", http.StatusInternalServerError)
 			return
 		}
+	}
 
-		if err := a.storage.StorePackageFile(fmt.Sprintf("%s/%s", targetRepo, packageInfo.Name), formPkgHeader.Filename); err != nil {
-			log.Println(err)
-			http.Error(w, "Got error while saving new Blinky db entry. Check server logs for more information.", http.StatusInternalServerError)
-			return
-		}
+	if err := a.storage.StorePackageFile(fmt.Sprintf("%s/%s", targetRepo, packageInfo.Name), formPkgHeader.Filename); err != nil {
+		log.Println(err)
+		http.Error(w, "Got error while saving new Blinky db entry. Check server logs for more information.", http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
