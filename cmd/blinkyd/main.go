@@ -44,7 +44,7 @@ func main() {
 	httpPort := viper.GetString("HTTPPort")
 	apiUname := viper.GetString("APIUsername")
 	apiPasswd := viper.GetString("APIPassword")
-	var repoArches []string
+	var repoArches []string = []string{"any"}
 	viper.UnmarshalKey("RepoArch", &repoArches)
 
 	os.RemoveAll(gpgDir) // We don't care if this fails because of a missing dir, and if it's something else, we'll find out soon.
@@ -100,6 +100,10 @@ func main() {
 }
 
 func validateRepos(repoPaths []string, repoArches []string, signDB bool, gpgDir string) {
+	if len(repoArches) == 1 {
+		log.Println("WARNING: No repo architectures specified.")
+	}
+
 	for _, repoPath := range repoPaths {
 		if err := os.MkdirAll(repoPath+"/tmp", 0777); err != nil {
 			log.Printf("WARNING: Unable to create %s because of error: %v", repoPath+"/tmp", err)
@@ -115,6 +119,7 @@ func validateRepos(repoPaths []string, repoArches []string, signDB bool, gpgDir 
 			}
 		}
 	}
+
 }
 
 func registerHTTPHandlers(repoPaths, repoArches []string, dbPath, gpgDir, apiUname, apiPasswd string, requireSignedPkgs, signDB bool) {
