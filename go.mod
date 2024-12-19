@@ -1,6 +1,8 @@
 module github.com/BrenekH/blinky
 
-go 1.21
+go 1.23
+
+toolchain go1.23.4
 
 require (
 	github.com/dgraph-io/badger/v3 v3.2103.5
