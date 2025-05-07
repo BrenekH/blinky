@@ -65,7 +65,7 @@ func SetupDefaults() error {
 	viper.SetDefault("APIPassword", "")
 
 	// RepoArch
-	viper.SetDefault("RepoArch", "x86_64")
+	viper.SetDefault("RepoArch", []string{"x86_64", "any"})
 
 	return nil
 }

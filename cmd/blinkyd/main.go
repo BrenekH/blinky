@@ -44,7 +44,7 @@ func main() {
 	httpPort := viper.GetString("HTTPPort")
 	apiUname := viper.GetString("APIUsername")
 	apiPasswd := viper.GetString("APIPassword")
-	var repoArches []string = []string{"any"}
+	var repoArches []string
 	viper.UnmarshalKey("RepoArch", &repoArches)
 
 	os.RemoveAll(gpgDir) // We don't care if this fails because of a missing dir, and if it's something else, we'll find out soon.
