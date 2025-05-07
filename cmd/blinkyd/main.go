@@ -114,8 +114,10 @@ func validateRepos(repoPaths []string, repoArches []string, signDB bool, gpgDir 
 				log.Printf("WARNING: Unable to create %s because of the following error: %v", repoPath+"/"+repoArch, err)
 			}
 
-			if err := pacman.RepoAdd(repoPath+"/"+repoArch+"/"+filepath.Base(repoPath)+".db.tar.gz", "", signDB, &gpgDir); err != nil {
-				log.Printf("WARNING: Unable to create repository database because of following error: %s", err)
+			if repoArch != "any" {
+				if err := pacman.RepoAdd(repoPath+"/"+repoArch+"/"+filepath.Base(repoPath)+".db.tar.gz", "", signDB, &gpgDir); err != nil {
+					log.Printf("WARNING: Unable to create repository database because of following error: %s", err)
+				}
 			}
 		}
 	}
