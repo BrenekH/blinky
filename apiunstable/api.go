@@ -125,10 +125,12 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 			}
 
 			// Make symlink for signature file
-			if err := os.Symlink(anyDirPkgPath+".sig", archDirPkgPath+".sig"); err != nil {
-				log.Println(err)
-				http.Error(w, "Failed to create symlink for signature file. Check the server logs for more information.", http.StatusInternalServerError)
-				return
+			if e, _ := fileExists(anyDirPkgPath + ".sig"); e {
+				if err := os.Symlink(anyDirPkgPath+".sig", archDirPkgPath+".sig"); err != nil {
+					log.Println(err)
+					http.Error(w, "Failed to create symlink for signature file. Check the server logs for more information.", http.StatusInternalServerError)
+					return
+				}
 			}
 
 			// Run repo-add for each architecture
@@ -206,8 +208,10 @@ func (a *API) deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) isValidRepo(r string) bool {
+	fmt.Println("Checking repo:", r)
 	for repo := range a.repos {
 		if r == repo {
+			fmt.Println("Found repo:", repo)
 			return true
 		}
 	}
