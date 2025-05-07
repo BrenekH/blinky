@@ -12,12 +12,15 @@ import (
 	"reflect"
 )
 
-func New(url, username, password string) BlinkyClient {
-	return BlinkyClient{
+func New(url, username, password string) (*BlinkyClient, error) {
+	if url == "" {
+		return nil, errors.New("url must not be empty")
+	}
+	return &BlinkyClient{
 		URL:      url,
 		Username: username,
 		Password: password,
-	}
+	}, nil
 }
 
 type BlinkyClient struct {

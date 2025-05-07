@@ -54,7 +54,11 @@ password if --password is not used and --ask-pass is passed.`,
 			}
 		}
 
-		client := clientlib.New(server, username, password)
+		client, err := clientlib.New(server, username, password)
+		if err != nil {
+			fmt.Printf("Error while creating client: %v", err)
+			os.Exit(1)
+		}
 
 		repoName := args[0]
 		packagesToRemove := args[1:]
