@@ -100,6 +100,10 @@ func main() {
 }
 
 func validateRepos(repoPaths []string, repoArches []string, signDB bool, gpgDir string) {
+	if len(repoArches) == 1 {
+		log.Println("WARNING: No repo architectures specified.")
+	}
+
 	for _, repoPath := range repoPaths {
 		if err := os.MkdirAll(repoPath+"/tmp", 0777); err != nil {
 			log.Printf("WARNING: Unable to create %s because of error: %v", repoPath+"/tmp", err)
@@ -110,11 +114,14 @@ func validateRepos(repoPaths []string, repoArches []string, signDB bool, gpgDir 
 				log.Printf("WARNING: Unable to create %s because of the following error: %v", repoPath+"/"+repoArch, err)
 			}
 
-			if err := pacman.RepoAdd(repoPath+"/"+repoArch+"/"+filepath.Base(repoPath)+".db.tar.gz", "", signDB, &gpgDir); err != nil {
-				log.Printf("WARNING: Unable to create repository database because of following error: %s", err)
+			if repoArch != "any" {
+				if err := pacman.RepoAdd(repoPath+"/"+repoArch+"/"+filepath.Base(repoPath)+".db.tar.gz", "", signDB, &gpgDir); err != nil {
+					log.Printf("WARNING: Unable to create repository database because of following error: %s", err)
+				}
 			}
 		}
 	}
+
 }
 
 func registerHTTPHandlers(repoPaths, repoArches []string, dbPath, gpgDir, apiUname, apiPasswd string, requireSignedPkgs, signDB bool) {

@@ -90,7 +90,6 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Handle "any" packages
 	var targetArch string
 	for _, arch := range a.repoArches {
 		if arch == packageInfo.Arch {
@@ -102,16 +101,51 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// FIXME: Too verbose filepath
 	if err := os.Rename(a.repos[targetRepo]+"/tmp/"+formPkgHeader.Filename, a.repos[targetRepo]+"/"+targetArch+"/"+formPkgHeader.Filename); err != nil {
 		log.Println(err)
 		http.Error(w, "Failed to move package from temp directory. Check the server logs for more information.", http.StatusInternalServerError)
 		return
 	}
 
-	if err := pacman.RepoAdd(a.repos[targetRepo]+"/"+targetArch+"/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/"+targetArch+"/"+formPkgHeader.Filename, a.useSignedDB, &a.gnupgDir); err != nil {
-		log.Println(err)
-		http.Error(w, "Failed to add package to the database. Check the server logs for more information.", http.StatusInternalServerError)
-		return
+	if targetArch == "any" {
+		for _, arch := range a.repoArches {
+			if arch == "any" {
+				continue
+			}
+
+			anyDirPkgPath := a.repos[targetRepo] + "/any/" + formPkgHeader.Filename
+			archDirPkgPath := a.repos[targetRepo] + "/" + arch + "/" + formPkgHeader.Filename
+
+			// Make symlink for "any" packages
+			if err := os.Symlink(anyDirPkgPath, archDirPkgPath); err != nil {
+				log.Println(err)
+				http.Error(w, "Failed to create symlink for package. Check the server logs for more information.", http.StatusInternalServerError)
+				return
+			}
+
+			// Make symlink for signature file
+			if e, _ := fileExists(anyDirPkgPath + ".sig"); e {
+				if err := os.Symlink(anyDirPkgPath+".sig", archDirPkgPath+".sig"); err != nil {
+					log.Println(err)
+					http.Error(w, "Failed to create symlink for signature file. Check the server logs for more information.", http.StatusInternalServerError)
+					return
+				}
+			}
+
+			// Run repo-add for each architecture
+			if err := pacman.RepoAdd(a.repos[targetRepo]+"/"+arch+"/"+targetRepo+".db.tar.gz", archDirPkgPath, a.useSignedDB, &a.gnupgDir); err != nil {
+				log.Println(err)
+				http.Error(w, "Failed to add package to the database. Check the server logs for more information.", http.StatusInternalServerError)
+				return
+			}
+		}
+	} else {
+		if err := pacman.RepoAdd(a.repos[targetRepo]+"/"+targetArch+"/"+targetRepo+".db.tar.gz", a.repos[targetRepo]+"/"+targetArch+"/"+formPkgHeader.Filename, a.useSignedDB, &a.gnupgDir); err != nil {
+			log.Println(err)
+			http.Error(w, "Failed to add package to the database. Check the server logs for more information.", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	if err := a.storage.StorePackageFile(fmt.Sprintf("%s/%s", targetRepo, packageInfo.Name), formPkgHeader.Filename); err != nil {
@@ -174,8 +208,10 @@ func (a *API) deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) isValidRepo(r string) bool {
+	fmt.Println("Checking repo:", r)
 	for repo := range a.repos {
 		if r == repo {
+			fmt.Println("Found repo:", repo)
 			return true
 		}
 	}
