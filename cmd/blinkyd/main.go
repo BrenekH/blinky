@@ -120,7 +120,7 @@ func registerHTTPHandlers(repoPaths []string, dbPath, gpgDir, apiUname, apiPassw
 	apiAuth := httpbasicauth.New(apiUname, apiPasswd)
 
 	apiRouter := mux.NewRouter()
-	apiUnstable := apiunstable.New(&ds, &apiAuth, correlateRepoNames(repoPaths), gpgDir, requireSignedPkgs, signDB)
+	apiUnstable := apiunstable.New(ds, &apiAuth, correlateRepoNames(repoPaths), gpgDir, requireSignedPkgs, signDB)
 	apiUnstable.Register(apiRouter.PathPrefix("/api/unstable/").Subrouter())
 
 	http.Handle("/api/unstable/", apiRouter)
