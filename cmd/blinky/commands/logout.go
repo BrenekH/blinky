@@ -16,11 +16,13 @@ var logoutCmd = &cobra.Command{
 
 logout will clear the default server if it is set
 to one of the servers being removed.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) < 1 {
-			fmt.Printf("Incorrect number of arguments for logout command. Expected >=1, got %v.\n\nUse blinky logout --help for more information.\n", len(args))
-			os.Exit(1)
+			return fmt.Errorf("incorrect number of arguments for logout command. Expected >=1, got %v", len(args))
 		}
+		return nil
+	},
+	Run: func(cmd *cobra.Command, args []string) {
 		serverURLs := args
 
 		serverDB, err := util.ReadServerDB()

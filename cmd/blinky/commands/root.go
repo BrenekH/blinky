@@ -16,9 +16,6 @@ from a Blinky Pacman repository.`,
 	Version: vars.Version,
 }
 
-func init() {
-}
-
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
