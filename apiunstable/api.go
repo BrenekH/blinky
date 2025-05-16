@@ -148,7 +148,7 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if err := a.storage.StorePackageFile(fmt.Sprintf("%s/%s", targetRepo, packageInfo.Name), formPkgHeader.Filename); err != nil {
+	if err := a.storage.StorePackageFile(fmt.Sprintf("%s/%s", targetRepo, packageInfo.Name), targetArch, formPkgHeader.Filename); err != nil {
 		log.Println(err)
 		http.Error(w, "Got error while saving new Blinky db entry. Check server logs for more information.", http.StatusInternalServerError)
 		return
@@ -178,7 +178,7 @@ func (a *API) deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Locate package file from Blinky database
-		pkgFile, err := a.storage.PackageFile(fmt.Sprintf("%s/%s", targetRepo, targetPkgName))
+		pkgFile, err := a.storage.PackageFile(fmt.Sprintf("%s/%s", targetRepo, targetPkgName), arch)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unable to find %s/%s in database.", targetRepo, targetPkgName), http.StatusInternalServerError)
 			return
@@ -196,12 +196,12 @@ func (a *API) deleteRepoPkg(w http.ResponseWriter, r *http.Request) {
 		if err := os.Remove(pkgFile + ".sig"); err != nil {
 			log.Printf("Unable to remove %s because of error: %v\n", pkgFile+".sig", err)
 		}
-	}
 
-	if err := a.storage.DeletePackageFileEntry(fmt.Sprintf("%s/%s", targetRepo, targetPkgName)); err != nil {
-		log.Println(err)
-		http.Error(w, fmt.Sprintf("Got error while deleting package file from Blinky database: %v", err), http.StatusInternalServerError)
-		return
+		if err := a.storage.DeletePackageFileEntry(fmt.Sprintf("%s/%s", targetRepo, targetPkgName), arch); err != nil {
+			log.Println(err)
+			http.Error(w, fmt.Sprintf("Got error while deleting package file from Blinky database: %v", err), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusOK)
