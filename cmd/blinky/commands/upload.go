@@ -57,7 +57,11 @@ be uploaded along with the package to the target server.`,
 			}
 		}
 
-		client := clientlib.New(server, username, password)
+		client, err := clientlib.New(server, username, password)
+		if err != nil {
+			fmt.Printf("Error while creating client: %v", err)
+			os.Exit(1)
+		}
 
 		repoName := args[0]
 		packageFiles := args[1:]
