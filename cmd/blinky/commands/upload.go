@@ -24,16 +24,17 @@ password if --password is not used and --ask-pass is passed.
 
 If a matching ".sig" is found alongside the package file, it will
 be uploaded along with the package to the target server.`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 2 {
+			return fmt.Errorf("incorrect number of arguments for upload command. Expected >=2, got %v", len(args))
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		server := viper.GetString("server")
 		username := viper.GetString("username")
 		password := viper.GetString("password")
 		promptForPasswd := viper.GetBool("ask-pass")
-
-		if len(args) < 2 {
-			fmt.Printf("Incorrect number of arguments for upload command. Expected >=2, got %v.\n\nUse blinky upload --help for more information.\n", len(args))
-			os.Exit(1)
-		}
 
 		serverDB, err := util.ReadServerDB()
 		if err != nil {

@@ -21,16 +21,17 @@ the default server will be used.
 The user may override the saved username and password with the
 --username and --password flags. remove will also prompt for a
 password if --password is not used and --ask-pass is passed.`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) < 2 {
+			return fmt.Errorf("incorrect number of arguments for remove command. Expected >=2, got %v", len(args))
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		server := viper.GetString("server")
 		username := viper.GetString("username")
 		password := viper.GetString("password")
 		promptForPasswd := viper.GetBool("ask-pass")
-
-		if len(args) < 2 {
-			fmt.Printf("Incorrect number of arguments for remove command. Expected >=2, got %v.\n\nUse blinky remove --help for more information.\n", len(args))
-			os.Exit(1)
-		}
 
 		serverDB, err := util.ReadServerDB()
 		if err != nil {

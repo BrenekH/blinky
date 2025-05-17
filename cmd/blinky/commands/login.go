@@ -20,15 +20,16 @@ used by upload and remove.
 A user may choose to pass login details using
 the --username and --password flags. Any fields that are provided to login
 will be prompted for.`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) != 1 {
+			return fmt.Errorf("incorrect number of arguments for login command. Expected 1, got %v", len(args))
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		setAsDefault := viper.GetBool("default")
 		username := viper.GetString("username")
 		password := viper.GetString("password")
-
-		if len(args) != 1 {
-			fmt.Printf("Incorrect number of arguments for login command. Expected 1, got %v.\n\nUse blinky login --help for more information.\n", len(args))
-			os.Exit(1)
-		}
 		serverURL := args[0]
 
 		serverDB, err := util.ReadServerDB()
