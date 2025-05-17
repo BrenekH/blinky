@@ -12,18 +12,17 @@ import (
 )
 
 type ServerDB struct {
-	DefaultServer string `json:"default"`
-	Servers       map[string]struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	} `json:"servers"`
+	DefaultServer string            `json:"default"`
+	Servers       map[string]Server `json:"servers"`
+}
+
+type Server struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 func NewServerDB() ServerDB {
-	return ServerDB{Servers: make(map[string]struct {
-		Username string "json:\"username\""
-		Password string "json:\"password\""
-	})}
+	return ServerDB{Servers: make(map[string]Server)}
 }
 
 var serverDBLoc string // Caches where the server database gets written.
