@@ -52,7 +52,11 @@ func (a *API) putRepoPkg(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Populate r.FormFile by parsing the request body and loading up to 256 MB of the files into memory. The rest of the files are stored on disk.
-	r.ParseMultipartForm(256_000_000)
+	if err := r.ParseMultipartForm(256_000_000); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("Parsing multipart form: %v\n", err)
+		return
+	}
 
 	formPkgFile, formPkgHeader, err := r.FormFile("package")
 	if err != nil {
