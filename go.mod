@@ -7,7 +7,7 @@ toolchain go1.25.5
 require (
 	github.com/dgraph-io/badger/v3 v3.2103.5
 	github.com/gorilla/mux v1.8.1
-	github.com/klauspost/compress v1.17.11
+	github.com/klauspost/compress v1.18.2
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.19.0
