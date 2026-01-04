@@ -3,7 +3,7 @@ package keyvaluestore
 import (
 	"fmt"
 
-	"github.com/dgraph-io/badger/v3"
+	"github.com/dgraph-io/badger/v4"
 )
 
 func New(dbDirPath string) (*BadgerAdapter, error) {
