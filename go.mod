@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.25.5
 
 require (
-	github.com/dgraph-io/badger/v3 v3.2103.5
+	github.com/dgraph-io/badger/v4 v4.9.0
 	github.com/dgraph-io/badger/v4 v4.9.0
 	github.com/gorilla/mux v1.8.1
 	github.com/klauspost/compress v1.18.2
