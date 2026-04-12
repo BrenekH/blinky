@@ -229,7 +229,7 @@ jobs:
           path: ${{ github.workspace }}/build-artifacts
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: Version ${{ env.TAG_USED }}
           prerelease: ${{ env.PREREL }}
